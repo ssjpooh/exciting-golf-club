@@ -1,0 +1,23 @@
+{
+  "name": "익사이팅 볼링 클럽",
+  "short_name": "볼링클럽",
+  "description": "볼링 점수 기록 및 통계 관리 서비스",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d9488",
+  "theme_color": "#0d9488",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
