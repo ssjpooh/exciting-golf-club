@@ -80,17 +80,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         name: "viewport",
         content: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0",
       },
-      { title: "익사이팅 볼링 클럽" },
-      { name: "description", content: "익사이팅 볼링 클럽 - 볼링 점수 기록 및 분석" },
+      { title: "은주는 골프왕" },
+      { name: "description", content: "은주는 골프왕 - 골프 점수 기록 및 분석" },
       { name: "author", content: "ssjpooh" },
-      { property: "og:title", content: "익사이팅 볼링 클럽" },
-      { property: "og:description", content: "나만의 볼링 점수를 기록하고 분석하세요." },
+      { property: "og:title", content: "은주는 골프왕" },
+      { property: "og:description", content: "나만의 골프 점수를 기록하고 분석하세요." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "theme-color", content: "#0d9488" },
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
-      { name: "apple-mobile-web-app-title", content: "볼링클럽" },
+      { name: "apple-mobile-web-app-title", content: "골프왕" },
     ],
     links: [
       {
@@ -168,7 +168,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <Outlet />
       <Toaster />
-      <ReleaseNoteDialog />
+      {/* <ReleaseNoteDialog /> */}
     </QueryClientProvider>
   );
 }

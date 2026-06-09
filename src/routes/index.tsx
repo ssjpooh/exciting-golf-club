@@ -146,6 +146,7 @@ function LoginPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-3">
+            {/* 
             <SocialButton
               provider="kakao"
               label="카카오톡으로 시작하기"
@@ -158,6 +159,7 @@ function LoginPage() {
               onClick={() => handleSocialLogin("naver")}
               isLoading={isLoading}
             />
+            */}
             <SocialButton
               provider="google"
               label="구글 계정으로 시작하기"
