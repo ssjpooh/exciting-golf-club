@@ -1233,28 +1233,45 @@ function ScoresPage() {
   };
 
   const SidebarMenu = () => {
+    const [isNameDialogOpen, setIsNameDialogOpen] = useState(false);
+    const [inputName, setInputName] = useState("");
+
+    const openNameDialog = () => {
+      setInputName(localStorage.getItem("userName") || "");
+      setIsNameDialogOpen(true);
+    };
+
+    const saveName = () => {
+      if (inputName.trim()) {
+        localStorage.setItem("userName", inputName.trim());
+        toast.success("앱 타이틀 이름이 변경되었습니다.");
+        setIsNameDialogOpen(false);
+      }
+    };
+
     return (
-      <Sheet>
-        <SheetTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-10 w-10 text-slate-500 hover:text-teal-600 transition-colors"
+      <>
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 text-slate-500 hover:text-teal-600 transition-colors"
+            >
+              <Menu className="h-6 w-6" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent
+            side="left"
+            className="w-[280px] sm:w-[350px] p-0 flex flex-col border-r-0 shadow-2xl"
           >
-            <Menu className="h-6 w-6" />
-          </Button>
-        </SheetTrigger>
-        <SheetContent
-          side="left"
-          className="w-[280px] sm:w-[350px] p-0 flex flex-col border-r-0 shadow-2xl"
-        >
-          <SheetHeader className="p-6 bg-gradient-to-br from-teal-600 to-teal-700 text-white text-left">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl shadow-inner">
-                🎳
+            <SheetHeader className="p-6 bg-gradient-to-br from-teal-600 to-teal-700 text-white text-left">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl shadow-inner">
+                  ⛳
+                </div>
+                <SheetTitle className="text-xl font-black text-white">골프왕 메뉴</SheetTitle>
               </div>
-              <SheetTitle className="text-xl font-black text-white">Exciting Bowling</SheetTitle>
-            </div>
             {userProfile && (
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
@@ -1277,6 +1294,14 @@ function ScoresPage() {
             >
               <LayoutDashboard className="h-5 w-5" />
               점수 기록부
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full justify-start gap-3 h-12 font-semibold text-slate-600 hover:bg-teal-50 hover:text-teal-700"
+              onClick={openNameDialog}
+            >
+              <Settings className="h-5 w-5" />
+              앱 이름 설정
             </Button>
 
             {(userProfile?.role === "super_admin" || userProfile?.role === "master") && (
@@ -1324,8 +1349,31 @@ function ScoresPage() {
           </div>
         </SheetContent>
       </Sheet>
-    );
-  };
+
+      <Dialog open={isNameDialogOpen} onOpenChange={setIsNameDialogOpen}>
+        <DialogContent className="w-[90vw] max-w-sm rounded-2xl p-6">
+          <DialogHeader>
+            <DialogTitle>앱 타이틀 설정</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>사용할 이름</Label>
+              <Input
+                value={inputName}
+                onChange={(e) => setInputName(e.target.value)}
+                placeholder="예: 철수"
+                maxLength={10}
+              />
+            </div>
+            <Button onClick={saveName} className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold h-12">
+              저장하기
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
 
   if (loading)
     return (
@@ -1339,13 +1387,11 @@ function ScoresPage() {
       <div className="mx-auto max-w-5xl space-y-4 sm:space-y-8">
         <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            {/* 사이드바 메뉴 트리거 - 슈퍼관리자/클럽장 전용 */}
-            {(userProfile?.role === "super_admin" || userProfile?.role === "master") && (
-              <SidebarMenu />
-            )}
+            {/* 모든 사용자가 접근 가능한 사이드바 메뉴 */}
+            <SidebarMenu />
 
             <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-teal-600 flex items-center justify-center text-white text-xl sm:text-2xl shadow-lg shadow-teal-600/20">
-              🎳
+              ⛳
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 mb-0.5">

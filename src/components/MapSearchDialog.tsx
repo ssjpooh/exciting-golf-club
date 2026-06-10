@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { GoogleMap, useLoadScript, Marker, InfoWindow } from "@react-google-maps/api";
+import { GoogleMap, useLoadScript, Marker, InfoWindow, Autocomplete } from "@react-google-maps/api";
 import { MapPin, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 const libraries: ("places")[] = ["places"];
 
 interface MapSearchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelectBowlingAlley: (name: string) => void;
+  onSelectGolfCourse: (name: string) => void;
 }
 
 const mapContainerStyle = {
@@ -23,25 +24,45 @@ const defaultCenter = {
   lng: 126.9780
 };
 
-export function MapSearchDialog({ open, onOpenChange, onSelectBowlingAlley }: MapSearchDialogProps) {
+export function MapSearchDialog({ open, onOpenChange, onSelectGolfCourse }: MapSearchDialogProps) {
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string || "",
     libraries,
   });
 
   const [center, setCenter] = useState(defaultCenter);
-  const [bowlingAlleys, setBowlingAlleys] = useState<google.maps.places.PlaceResult[]>([]);
+  const [golfCourses, setGolfCourses] = useState<google.maps.places.PlaceResult[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<google.maps.places.PlaceResult | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   
   const mapRef = useRef<google.maps.Map | null>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
   const onMapLoad = useCallback((map: google.maps.Map) => {
     mapRef.current = map;
   }, []);
 
-  const searchBowlingAlleys = useCallback((location: google.maps.LatLng | google.maps.LatLngLiteral) => {
+  const onAutocompleteLoad = (autocomplete: google.maps.places.Autocomplete) => {
+    autocompleteRef.current = autocomplete;
+  };
+
+  const onPlaceChanged = () => {
+    if (autocompleteRef.current !== null) {
+      const place = autocompleteRef.current.getPlace();
+      if (place.geometry && place.geometry.location) {
+        const location = {
+          lat: place.geometry.location.lat(),
+          lng: place.geometry.location.lng()
+        };
+        setCenter(location);
+        setSelectedPlace(place);
+        searchGolfCourses(location);
+      }
+    }
+  };
+
+  const searchGolfCourses = useCallback((location: google.maps.LatLng | google.maps.LatLngLiteral) => {
     if (!mapRef.current) return;
 
     const service = new google.maps.places.PlacesService(mapRef.current);
@@ -49,16 +70,15 @@ export function MapSearchDialog({ open, onOpenChange, onSelectBowlingAlley }: Ma
     const request: google.maps.places.PlaceSearchRequest = {
       location: location,
       radius: 5000, // 5km radius
-      keyword: "볼링장",
-      type: "bowling_alley"
+      keyword: "골프장"
     };
 
     service.nearbySearch(request, (results, status) => {
       if (status === google.maps.places.PlacesServiceStatus.OK && results) {
-        setBowlingAlleys(results);
+        setGolfCourses(results);
         setSearchError(null);
       } else {
-        setBowlingAlleys([]);
+        setGolfCourses([]);
         if (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
           // It's okay, maybe there are none in the strict radius but user can still click map POIs
           setSearchError(null);
@@ -71,7 +91,7 @@ export function MapSearchDialog({ open, onOpenChange, onSelectBowlingAlley }: Ma
   }, []);
 
   const handleMapClick = useCallback((e: google.maps.MapMouseEvent | google.maps.IconMouseEvent) => {
-    // If user clicked a native map POI (like a default bowling alley icon)
+    // If user clicked a native map POI
     if ("placeId" in e && e.placeId && mapRef.current) {
       e.stop(); // Prevent default info window from opening
       
@@ -99,26 +119,26 @@ export function MapSearchDialog({ open, onOpenChange, onSelectBowlingAlley }: Ma
             };
             setCenter(userLoc);
             setIsLoadingLocation(false);
-            searchBowlingAlleys(userLoc);
+            searchGolfCourses(userLoc);
           },
           (error) => {
             console.error("Error getting location:", error);
             setIsLoadingLocation(false);
             // Even if location fails, search around default center
-            searchBowlingAlleys(center);
+            searchGolfCourses(center);
           }
         );
       } else {
         setIsLoadingLocation(false);
-        searchBowlingAlleys(center);
+        searchGolfCourses(center);
       }
     }
-  }, [open, isLoaded, searchBowlingAlleys]);
+  }, [open, isLoaded, searchGolfCourses]);
 
   const handleSelect = () => {
     if (selectedPlace?.name) {
-      localStorage.setItem("lastSearchedBowlingAlley", selectedPlace.name);
-      onSelectBowlingAlley(selectedPlace.name);
+      localStorage.setItem("lastSearchedGolfCourse", selectedPlace.name);
+      onSelectGolfCourse(selectedPlace.name);
       onOpenChange(false);
     }
   };
@@ -133,11 +153,24 @@ export function MapSearchDialog({ open, onOpenChange, onSelectBowlingAlley }: Ma
         <DialogHeader className="bg-teal-600 px-5 py-4 text-white">
           <DialogTitle className="text-lg font-bold flex items-center gap-2">
             <Search className="w-5 h-5" />
-            주변 볼링장 검색
+            주변 골프장 검색
           </DialogTitle>
         </DialogHeader>
         
         <div className="p-4 flex flex-col gap-4 bg-slate-50">
+          {isLoaded && (
+            <Autocomplete
+              onLoad={onAutocompleteLoad}
+              onPlaceChanged={onPlaceChanged}
+            >
+              <Input 
+                type="text" 
+                placeholder="골프장 이름으로 검색 (예: 남서울 CC)" 
+                className="w-full h-12 text-base shadow-sm font-medium"
+              />
+            </Autocomplete>
+          )}
+
           <div className="relative rounded-xl overflow-hidden border border-slate-200 shadow-inner">
             {isLoadingLocation && (
               <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center font-bold text-teal-600">
@@ -175,8 +208,8 @@ export function MapSearchDialog({ open, onOpenChange, onSelectBowlingAlley }: Ma
                   }} 
                 />
                 
-                {/* Bowling Alleys Markers */}
-                {bowlingAlleys.map((place, idx) => (
+                {/* Golf Courses Markers */}
+                {golfCourses.map((place, idx) => (
                   <Marker
                     key={idx}
                     position={place.geometry?.location!}
@@ -201,7 +234,7 @@ export function MapSearchDialog({ open, onOpenChange, onSelectBowlingAlley }: Ma
                         onClick={handleSelect}
                         className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold h-7 text-xs"
                       >
-                        이 볼링장 선택
+                        이 골프장 선택
                       </Button>
                     </div>
                   </InfoWindow>

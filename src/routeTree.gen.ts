@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SelectCourseRouteImport } from './routes/select-course'
 import { Route as ScoresRouteImport } from './routes/scores'
 import { Route as ProfileSetupRouteImport } from './routes/profile-setup'
 import { Route as IndexRouteImport } from './routes/index'
@@ -18,6 +19,11 @@ import { Route as AdminApprovalsRouteImport } from './routes/admin/approvals'
 import { Route as OauthCallbackNaverRouteImport } from './routes/oauth/callback/naver'
 import { Route as OauthCallbackKakaoRouteImport } from './routes/oauth/callback/kakao'
 
+const SelectCourseRoute = SelectCourseRouteImport.update({
+  id: '/select-course',
+  path: '/select-course',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ScoresRoute = ScoresRouteImport.update({
   id: '/scores',
   path: '/scores',
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/profile-setup': typeof ProfileSetupRoute
   '/scores': typeof ScoresRoute
+  '/select-course': typeof SelectCourseRoute
   '/admin/approvals': typeof AdminApprovalsRoute
   '/admin/clubs': typeof AdminClubsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/profile-setup': typeof ProfileSetupRoute
   '/scores': typeof ScoresRoute
+  '/select-course': typeof SelectCourseRoute
   '/admin/approvals': typeof AdminApprovalsRoute
   '/admin/clubs': typeof AdminClubsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/profile-setup': typeof ProfileSetupRoute
   '/scores': typeof ScoresRoute
+  '/select-course': typeof SelectCourseRoute
   '/admin/approvals': typeof AdminApprovalsRoute
   '/admin/clubs': typeof AdminClubsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/profile-setup'
     | '/scores'
+    | '/select-course'
     | '/admin/approvals'
     | '/admin/clubs'
     | '/admin/users'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/profile-setup'
     | '/scores'
+    | '/select-course'
     | '/admin/approvals'
     | '/admin/clubs'
     | '/admin/users'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/'
     | '/profile-setup'
     | '/scores'
+    | '/select-course'
     | '/admin/approvals'
     | '/admin/clubs'
     | '/admin/users'
@@ -127,6 +139,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ProfileSetupRoute: typeof ProfileSetupRoute
   ScoresRoute: typeof ScoresRoute
+  SelectCourseRoute: typeof SelectCourseRoute
   AdminApprovalsRoute: typeof AdminApprovalsRoute
   AdminClubsRoute: typeof AdminClubsRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -136,6 +149,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/select-course': {
+      id: '/select-course'
+      path: '/select-course'
+      fullPath: '/select-course'
+      preLoaderRoute: typeof SelectCourseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/scores': {
       id: '/scores'
       path: '/scores'
@@ -199,6 +219,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ProfileSetupRoute: ProfileSetupRoute,
   ScoresRoute: ScoresRoute,
+  SelectCourseRoute: SelectCourseRoute,
   AdminApprovalsRoute: AdminApprovalsRoute,
   AdminClubsRoute: AdminClubsRoute,
   AdminUsersRoute: AdminUsersRoute,

@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { signInWithGoogle, signInWithApple, signInAnonymouslyUser } from "@/lib/auth/providers";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -16,9 +17,39 @@ export const Route = createFileRoute("/")({
   component: LoginPage,
 });
 
+function getJosa(word: string): string {
+  if (!word) return '';
+  const lastChar = word.charCodeAt(word.length - 1);
+  if (lastChar < 0xac00 || lastChar > 0xd7a3) {
+    return word + '는'; // fallback
+  }
+  const hasJongseong = (lastChar - 0xac00) % 28 > 0;
+  return word + (hasJongseong ? '은' : '는');
+}
+
 function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+
+  const [userName, setUserName] = useState<string | null>(null);
+  const [inputName, setInputName] = useState("");
+  const [isNameLoaded, setIsNameLoaded] = useState(false);
+
+  useEffect(() => {
+    const storedName = localStorage.getItem("userName");
+    if (storedName) {
+      setUserName(storedName);
+    }
+    setIsNameLoaded(true);
+  }, []);
+
+  const handleSaveName = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inputName.trim()) {
+      localStorage.setItem("userName", inputName.trim());
+      setUserName(inputName.trim());
+    }
+  };
 
   // 로그인 상태 및 프로필 완성도 체크
   useEffect(() => {
@@ -39,14 +70,8 @@ function LoginPage() {
           }
 
           if (profile) {
-            const activeRequest = await getUserActiveApprovalRequest(user.uid);
-            
-            // 이름과 클럽 선택 정보가 없으면 가입 정보 설정 화면 활성화
-            if (!profile.clubId && !activeRequest) {
-              navigate({ to: "/profile-setup", replace: true });
-            } else {
-              navigate({ to: "/scores", replace: true });
-            }
+            // 기본적으로 로그인 후 골프장 선택 화면으로 이동
+            navigate({ to: "/select-course", replace: true });
           }
         } catch (err) {
           console.error("Profile check error:", err);
@@ -120,13 +145,46 @@ function LoginPage() {
   };
 
 
+  if (!isNameLoaded) return null;
+
+  if (!userName) {
+    return (
+      <main className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-teal-50 via-white to-amber-50 px-4 py-10">
+        <Card className="w-full max-w-md p-8 sm:p-10 shadow-2xl border-none bg-white/80 backdrop-blur-sm">
+          <header className="text-center mb-10">
+            <div className="text-6xl mb-4 animate-bounce">⛳</div>
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 mb-4">
+              당신의 이름을<br />알려주세요
+            </h1>
+            <p className="text-sm text-slate-500 font-medium">
+              앱에서 사용할 이름을 입력해주세요.
+            </p>
+          </header>
+          <form onSubmit={handleSaveName} className="flex flex-col gap-4">
+            <Input 
+              value={inputName} 
+              onChange={e => setInputName(e.target.value)} 
+              placeholder="예: 철수" 
+              className="h-14 text-center text-xl font-bold bg-white"
+              maxLength={10}
+              autoFocus
+            />
+            <Button type="submit" disabled={!inputName.trim()} className="h-14 text-lg font-bold bg-teal-600 hover:bg-teal-700 text-white">
+              시작하기
+            </Button>
+          </form>
+        </Card>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-teal-50 via-white to-amber-50 px-4 py-10">
       <Card className="w-full max-w-md p-8 sm:p-10 shadow-2xl border-none bg-white/80 backdrop-blur-sm">
         <header className="text-center mb-10">
           <div className="text-6xl mb-4 animate-bounce">⛳</div>
           <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900">
-            은주는
+            {getJosa(userName)}
             <br />
             골프왕
           </h1>

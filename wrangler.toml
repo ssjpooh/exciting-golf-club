@@ -1,4 +1,4 @@
-name = "exciting-bowling-club"
+name = "exciting-golf-club"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 main = "src/server.ts"
