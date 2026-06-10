@@ -1589,7 +1589,7 @@ function ScoresPage() {
         />
 
         {/* 클럽 선택 다이얼로그 */}
-        <ClubSelectionDialog 
+        <ClubSelectionModal 
           userProfile={userProfile} 
           onUpdate={handleRefreshProfile} 
           open={isClubDialogOpen}
@@ -1718,7 +1718,7 @@ function PWAInstallSection() {
   return null;
 }
 
-function ClubSelectionDialog({
+function ClubSelectionModal({
   userProfile,
   onUpdate,
   open,
