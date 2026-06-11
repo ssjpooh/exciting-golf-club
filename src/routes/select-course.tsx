@@ -20,7 +20,8 @@ function SelectCoursePage() {
     try {
       // 골프장 이름으로 검색하여 ID를 가져옵니다.
       const results = await searchGolfClubs(courseName);
-      const courseId = results.length > 0 ? results[0].id : "test-1";
+      // 검색 결과가 없으면 임시로 선택한 이름 자체를 ID로 사용
+      const courseId = results.length > 0 ? results[0].id : encodeURIComponent(courseName);
       
       // courseId를 포함하여 scores 페이지로 이동
       navigate({ to: "/scores", search: { courseId } });
