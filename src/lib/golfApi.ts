@@ -47,12 +47,15 @@ export async function getCourseDetails(courseId: string) {
         headers: { "Authorization": `Key ${API_KEY}` }
       });
       if (response.ok) {
-        const data = await response.json();
+        const responseData = await response.json();
+        // API 응답이 { course: { ... } } 형태로 올 수 있으므로 처리
+        const courseData = responseData.course || responseData;
         
-        // 남성 티박스 중 첫 번째를 기준으로 18홀 정보를 구성합니다.
+        // 남성 티박스 중 첫 번째를 기준으로 정보를 구성합니다.
         let holes = [];
-        if (data.tees && data.tees.male && data.tees.male.length > 0) {
-          const defaultTee = data.tees.male[0];
+        let defaultTee = null;
+        if (courseData.tees && courseData.tees.male && courseData.tees.male.length > 0) {
+          defaultTee = courseData.tees.male[0];
           holes = defaultTee.holes.map((h: any, index: number) => ({
             hole: index + 1,
             par: h.par,
@@ -60,10 +63,19 @@ export async function getCourseDetails(courseId: string) {
             handicap: h.handicap
           }));
         }
+
+        // API 응답에 명시된 홀 수(number_of_holes)가 있거나, 
+        // 10번 홀 이후의 데이터가 비정상(예: par가 0)일 경우 9홀로 판단하여 자릅니다.
+        const apiHoleCount = defaultTee?.number_of_holes || courseData.holes || courseData.hole_count;
+        const validHoles = holes.filter(h => h.par && h.par > 0);
         
+        if (apiHoleCount === 9 || (apiHoleCount == null && validHoles.length <= 9)) {
+          holes = holes.slice(0, 9);
+        }
+
         return {
-          id: data.id.toString(),
-          name: `${data.club_name} - ${data.course_name}`,
+          id: courseData.id.toString(),
+          name: `${courseData.club_name} - ${courseData.course_name}`,
           holes: holes
         };
       }
@@ -75,12 +87,14 @@ export async function getCourseDetails(courseId: string) {
   console.log(`[더미 데이터] 코스 정보 가져오는 중... (ID: ${courseId})`);
   await new Promise(resolve => setTimeout(resolve, 500));
   
+  const decodedName = courseId === "test-1" ? "안양 베네스트 GC" : 
+                      courseId === "test-2" ? "가평 베네스트 GC" : 
+                      courseId === "test-3" ? "남서울 CC" : decodeURIComponent(courseId);
+
   return {
     id: courseId,
-    name: courseId === "test-1" ? "안양 베네스트 GC" : 
-          courseId === "test-2" ? "가평 베네스트 GC" : 
-          courseId === "test-3" ? "남서울 CC" : decodeURIComponent(courseId),
-    // 1번 홀부터 18홀까지 랜덤 파(Par)와 거리 데이터를 생성
+    name: decodedName,
+    // 더미 데이터 생성 (API 연동이 안 된 경우 기본 18홀)
     holes: Array.from({ length: 18 }, (_, i) => ({
       hole: i + 1,
       par: [3, 4, 4, 4, 5][Math.floor(Math.random() * 5)], // 파 3~5 무작위
