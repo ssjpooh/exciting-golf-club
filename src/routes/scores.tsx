@@ -66,7 +66,8 @@ function RecordRoundDialog({
           par: 4,
           distance: 300,
           score: 4,
-          putts: 2
+          putts: 2,
+          handicap: 0
         })));
       }
       setLocation(courseInfo?.name || "");
@@ -120,6 +121,7 @@ function RecordRoundDialog({
                 <tr className="bg-slate-100">
                   <th className="p-2 border">Hole</th>
                   <th className="p-2 border">Par</th>
+                  <th className="p-2 border">HCP</th>
                   <th className="p-2 border">Score</th>
                   <th className="p-2 border">Putts</th>
                 </tr>
@@ -130,6 +132,9 @@ function RecordRoundDialog({
                     <td className="p-2 border font-bold">{h.hole}</td>
                     <td className="p-2 border">
                       <Input type="number" value={h.par} onChange={e => updateHole(i, "par", Number(e.target.value))} className="w-16 mx-auto text-center" />
+                    </td>
+                    <td className="p-2 border">
+                      <Input type="number" value={h.handicap || ""} onChange={e => updateHole(i, "handicap", Number(e.target.value))} className="w-16 mx-auto text-center text-slate-400" placeholder="HCP" />
                     </td>
                     <td className="p-2 border">
                       <Input type="number" value={h.score} onChange={e => updateHole(i, "score", Number(e.target.value))} className="w-16 mx-auto text-center font-bold text-teal-600" />
@@ -238,8 +243,10 @@ function ScoresPage() {
             <h2 className="text-lg font-bold flex items-center gap-2 mb-2">
               <MapPin className="text-teal-600 w-5 h-5" /> {courseInfo.name}
             </h2>
-            <p className="text-sm text-slate-600 mb-4">코스 정보가 로드되었습니다. 총 18홀 라운드를 기록해보세요.</p>
-            <Button onClick={() => setIsRecordOpen(true)} className="w-full bg-teal-600 hover:bg-teal-700">이 코스로 점수 기록하기</Button>
+            <div className="flex gap-2">
+              <Button onClick={() => setIsRecordOpen(true)} className="flex-1 bg-teal-600 hover:bg-teal-700">이 코스로 점수 기록하기</Button>
+              <Button onClick={() => navigate({ to: "/select-course" })} variant="outline" className="flex-1 border-teal-200 text-teal-700 hover:bg-teal-100">골프장 변경</Button>
+            </div>
           </Card>
         )}
 

@@ -22,6 +22,7 @@ export type HoleScore = {
   distance: number;
   score: number;
   putts?: number;
+  handicap?: number;
 };
 
 export type GameStats = {
