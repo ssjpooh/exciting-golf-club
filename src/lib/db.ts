@@ -16,57 +16,38 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 
-export type Frame = {
-  throws: string[];
-  cumulative: number;
+export type HoleScore = {
+  hole: number;
+  par: number;
+  distance: number;
+  score: number;
+  putts?: number;
 };
 
 export type GameStats = {
-  strikeCount: number;
-  spareCount: number;
-  openCount: number;
+  birdies: number;
+  pars: number;
+  bogeys: number;
+  doubleBogeys: number;
+  worse: number;
+  totalPutts: number;
 };
 
 export type Score = {
   id?: string;
   userId: string;
   date: string;
-  frames: Frame[];
+  holes: HoleScore[];
   total: number;
   location?: string;
+  courseId?: string;
   memo?: string;
   matchType?: string;
-  ballUsed?: string;
   stats: GameStats;
   createdAt?: unknown;
 };
 
 export type UserRole = "super_admin" | "master" | "staff" | "member";
-
-export type Club = {
-  id: string;
-  name: string;
-  code: string;
-  club_owner: string; // 클럽장 UID
-  createdAt: unknown;
-};
-
-export type ApprovalStatus = "PENDING_LEAVE" | "PENDING_JOIN" | "APPROVED" | "REJECTED";
-export type ApprovalType = "JOIN" | "CHANGE";
-
-export type ClubApprovalRequest = {
-  id?: string;
-  userId: string;
-  userName: string;
-  type: ApprovalType;
-  status: ApprovalStatus;
-  fromClubId?: string;
-  fromClubName?: string;
-  toClubId: string;
-  toClubName: string;
-  createdAt?: any;
-  updatedAt?: any;
-};
 
 
 export type UserProfile = {
@@ -75,51 +56,34 @@ export type UserProfile = {
   nickname: string;
   provider: string;
   role: UserRole;
-  clubId?: string;
-  clubName?: string;
   average: number;
   highScore: number;
   createdAt: unknown;
   lastLoginAt: unknown;
 };
 
-// 프레임 목록에서 스트라이크/스페어/오픈 개수 계산
-function calculateStats(frames: Frame[]): GameStats {
-  let strikeCount = 0;
-  let spareCount = 0;
-  let openCount = 0;
+// 홀별 점수에서 버디, 파, 보기 등 계산
+function calculateStats(holes: HoleScore[]): GameStats {
+  let birdies = 0;
+  let pars = 0;
+  let bogeys = 0;
+  let doubleBogeys = 0;
+  let worse = 0;
+  let totalPutts = 0;
 
-  for (let i = 0; i < 10; i++) {
-    const f = frames[i];
-    if (!f || !f.throws) continue;
+  for (const h of holes) {
+    if (!h.score) continue;
+    const diff = h.score - h.par;
+    if (diff < 0) birdies++;
+    else if (diff === 0) pars++;
+    else if (diff === 1) bogeys++;
+    else if (diff === 2) doubleBogeys++;
+    else worse++;
 
-    const throws = f.throws;
-
-    // 1~9 프레임
-    if (i < 9) {
-      if (throws[0] === "X") strikeCount++;
-      else if (throws[1] === "/") spareCount++;
-      else openCount++;
-    }
-    // 10 프레임 (최대 3투구)
-    else {
-      let isStrikeOrSpare = false;
-      for (const t of throws) {
-        if (t === "X") {
-          strikeCount++;
-          isStrikeOrSpare = true;
-        } else if (t === "/") {
-          spareCount++;
-          isStrikeOrSpare = true;
-        }
-      }
-      if (!isStrikeOrSpare) {
-        openCount++;
-      }
-    }
+    if (h.putts) totalPutts += h.putts;
   }
 
-  return { strikeCount, spareCount, openCount };
+  return { birdies, pars, bogeys, doubleBogeys, worse, totalPutts };
 }
 
 // 점수 저장
@@ -127,7 +91,7 @@ export async function saveScore(
   userId: string,
   data: Omit<Score, "userId" | "stats" | "id" | "createdAt">,
 ) {
-  const stats = calculateStats(data.frames);
+  const stats = calculateStats(data.holes || []);
   
   // 클라이언트에서 넘어온 data에 id: undefined 가 포함되어 있으면 Firebase에서 에러가 나므로 제거
   const { id, ...restData } = data as any;
@@ -167,7 +131,7 @@ export async function updateSavedScore(
   userId: string,
   data: Omit<Score, "userId" | "stats" | "id" | "createdAt">,
 ) {
-  const stats = calculateStats(data.frames);
+  const stats = calculateStats(data.holes || []);
   
   // 클라이언트에서 넘어온 data에 id: undefined 가 포함되어 있으면 Firebase에서 에러가 나므로 제거
   const { id, ...restData } = data as any;
@@ -306,101 +270,6 @@ export async function updateUserRole(userId: string, newRole: UserRole) {
   });
 }
 
-// 모든 클럽 가져오기
-export async function getClubs(): Promise<Club[]> {
-  try {
-    console.log("Fetching all clubs from Firestore...");
-    const clubsRef = collection(db, "clubs");
-    // 정렬을 제거하여 필드가 누락된 예전 데이터도 모두 가져오도록 함
-    const snapshot = await getDocs(clubsRef);
-    
-    if (snapshot.empty) {
-      console.log("No clubs found in Firestore.");
-      return [];
-    }
-
-
-
-    const clubs: Club[] = [];
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      clubs.push({ 
-        id: doc.id, 
-        name: data.name || "Unknown",
-        code: data.code || "0000",
-        club_owner: data.club_owner || "",
-        createdAt: data.createdAt || null,
-      } as Club);
-    });
-    
-    console.log(`Successfully fetched ${clubs.length} clubs.`);
-    return clubs;
-  } catch (error) {
-    console.error("getClubs error:", error);
-    throw error;
-  }
-}
-
-
-// 클럽 추가 (슈퍼 관리자용)
-export async function addClub(name: string) {
-  try {
-    const trimmedName = name.trim();
-    const clubsRef = collection(db, "clubs");
-    
-    // 1. 중복 이름 체크
-    const qName = query(clubsRef, where("name", "==", trimmedName));
-    const snapName = await getDocs(qName);
-    
-    if (!snapName.empty) {
-      throw new Error("ALREADY_EXISTS_NAME");
-    }
-
-    // 2. 자동 코드 생성 (0000-9999)
-    const allClubsSnap = await getDocs(clubsRef);
-    let maxCode = -1;
-    
-    allClubsSnap.forEach(doc => {
-      const code = parseInt(doc.data().code);
-      if (!isNaN(code) && code > maxCode) {
-        maxCode = code;
-      }
-    });
-    
-    const nextCode = (maxCode + 1).toString().padStart(4, "0");
-    if (maxCode >= 9999) {
-      throw new Error("MAX_CLUB_LIMIT_REACHED");
-    }
-
-    // 3. 실제 쓰기 시도
-    const docRef = await addDoc(clubsRef, {
-      name: trimmedName,
-      code: nextCode,
-      club_owner: "", // 초기에는 클럽장 없음
-      createdAt: serverTimestamp(),
-    });
-    
-    console.log(`Success! Club created: ${trimmedName} (${nextCode})`);
-    return docRef.id;
-  } catch (error: any) {
-    console.error("Critical error in addClub:", error);
-    throw error;
-  }
-}
-
-
-
-
-
-// 유저의 클럽 정보 업데이트
-export async function updateUserClub(userId: string, clubId: string, clubName: string) {
-  const userRef = doc(db, "users", userId);
-  await updateDoc(userRef, {
-    clubId,
-    clubName,
-  });
-}
-
 // 유저 생성 또는 갱신 (로그인 시 호출)
 export async function createOrUpdateUser(user: {
   uid: string;
@@ -486,170 +355,4 @@ export async function updateUserNickname(userId: string, newNickname: string) {
   });
 }
 
-// 클럽 이름 수정
-export async function updateClubName(clubId: string, newName: string) {
-  try {
-    const trimmedName = newName.trim();
-    const clubsRef = collection(db, "clubs");
-    const qName = query(clubsRef, where("name", "==", trimmedName));
-    const snapName = await getDocs(qName);
-    
-    if (!snapName.empty && snapName.docs.some(doc => doc.id !== clubId)) {
-      throw new Error("ALREADY_EXISTS_NAME");
-    }
-
-    const clubRef = doc(db, "clubs", clubId);
-    await updateDoc(clubRef, { name: trimmedName });
-
-    const usersRef = collection(db, "users");
-    const qUsers = query(usersRef, where("clubId", "==", clubId));
-    const usersSnap = await getDocs(qUsers);
-    
-    const batch = writeBatch(db);
-    usersSnap.forEach((userDoc) => {
-      batch.update(userDoc.ref, { clubName: trimmedName });
-    });
-    await batch.commit();
-
-    console.log(`Club name updated successfully to: ${trimmedName}`);
-  } catch (error) {
-    console.error("updateClubName error:", error);
-    throw error;
-  }
-}
-
-// --- 클럽 승인 시스템 함수 ---
-
-// 승인 요청 생성
-export async function createClubApprovalRequest(
-  userId: string,
-  userName: string,
-  type: ApprovalType,
-  toClubId: string,
-  toClubName: string,
-  fromClubId?: string,
-  fromClubName?: string
-) {
-  // 이미 진행 중인 요청이 있는지 확인 (방어 로직)
-  const activeReq = await getUserActiveApprovalRequest(userId);
-  if (activeReq) {
-    throw new Error("ALREADY_HAS_ACTIVE_REQUEST");
-  }
-
-  const status: ApprovalStatus = type === "JOIN" ? "PENDING_JOIN" : "PENDING_LEAVE";
-
-  const reqData: Omit<ClubApprovalRequest, "id"> = {
-    userId,
-    userName,
-    type,
-    toClubId,
-    toClubName,
-    fromClubId,
-    fromClubName,
-    status,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  };
-  
-  // undefined 값이 있으면 Firebase 에러가 나므로 제거
-  Object.keys(reqData).forEach(key => {
-    if ((reqData as any)[key] === undefined) {
-      delete (reqData as any)[key];
-    }
-  });
-
-  const reqRef = collection(db, "approvals");
-  const docRef = await addDoc(reqRef, reqData);
-  return docRef.id;
-}
-
-// 특정 유저의 활성화된 승인 요청 조회
-export async function getUserActiveApprovalRequest(userId: string): Promise<ClubApprovalRequest | null> {
-  try {
-    const reqRef = collection(db, "approvals");
-    const q = query(reqRef, where("userId", "==", userId));
-    const snap = await getDocs(q);
-    
-    for (const doc of snap.docs) {
-      const data = doc.data() as ClubApprovalRequest;
-      if (data.status === "PENDING_JOIN" || data.status === "PENDING_LEAVE") {
-        return { id: doc.id, ...data };
-      }
-    }
-  } catch (error) {
-    console.error("getUserActiveApprovalRequest error (returning null):", error);
-  }
-  return null;
-}
-
-// 관리자 권한별 대기 중인 승인 요청 조회
-export async function getPendingApprovalRequests(userRole: UserRole, userClubId?: string): Promise<ClubApprovalRequest[]> {
-  const reqRef = collection(db, "approvals");
-  const requests: ClubApprovalRequest[] = [];
-
-  if (userRole === "super_admin") {
-    // 슈퍼 관리자는 모든 PENDING_JOIN, PENDING_LEAVE 조회
-    const qJoin = query(reqRef, where("status", "==", "PENDING_JOIN"));
-    const qLeave = query(reqRef, where("status", "==", "PENDING_LEAVE"));
-    const [snapJoin, snapLeave] = await Promise.all([getDocs(qJoin), getDocs(qLeave)]);
-    
-    snapJoin.forEach(doc => requests.push({ id: doc.id, ...doc.data() } as ClubApprovalRequest));
-    snapLeave.forEach(doc => requests.push({ id: doc.id, ...doc.data() } as ClubApprovalRequest));
-  } else if ((userRole === "master" || userRole === "staff") && userClubId) { 
-    // 클럽장, 운영진은 자신의 클럽으로 오는 JOIN, 자신의 클럽에서 나가는 LEAVE 조회
-    const qJoin = query(reqRef, where("toClubId", "==", userClubId));
-    const qLeave = query(reqRef, where("fromClubId", "==", userClubId));
-    
-    const [snapJoin, snapLeave] = await Promise.all([getDocs(qJoin), getDocs(qLeave)]);
-    snapJoin.forEach(doc => {
-      const data = doc.data() as ClubApprovalRequest;
-      if (data.status === "PENDING_JOIN") {
-        requests.push({ id: doc.id, ...data } as ClubApprovalRequest);
-      }
-    });
-    snapLeave.forEach(doc => {
-      const data = doc.data() as ClubApprovalRequest;
-      if (data.status === "PENDING_LEAVE") {
-        requests.push({ id: doc.id, ...data } as ClubApprovalRequest);
-      }
-    });
-  }
-
-  // 최신순 정렬 (createdAt.seconds 처리 방어)
-  return requests.sort((a, b) => {
-    const timeA = a.createdAt?.seconds || 0;
-    const timeB = b.createdAt?.seconds || 0;
-    return timeB - timeA;
-  });
-}
-
-// 승인 처리
-export async function approveClubRequest(reqId: string, currentStatus: ApprovalStatus, toClubId: string, toClubName: string, userId: string) {
-  const docRef = doc(db, "approvals", reqId);
-  
-  if (currentStatus === "PENDING_LEAVE") {
-    // 기존 클럽 탈퇴 승인 -> 새 클럽 가입 대기 상태로 변경
-    await updateDoc(docRef, {
-      status: "PENDING_JOIN",
-      updatedAt: serverTimestamp()
-    });
-  } else if (currentStatus === "PENDING_JOIN") {
-    // 새 클럽 가입 승인 -> 최종 승인 상태로 변경 및 유저 정보 업데이트
-    await updateDoc(docRef, {
-      status: "APPROVED",
-      updatedAt: serverTimestamp()
-    });
-    // 유저의 소속 클럽 업데이트
-    await updateUserClub(userId, toClubId, toClubName);
-  }
-}
-
-// 거절 처리
-export async function rejectClubRequest(reqId: string) {
-  const docRef = doc(db, "approvals", reqId);
-  await updateDoc(docRef, {
-    status: "REJECTED",
-    updatedAt: serverTimestamp()
-  });
-}
 

@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { searchGolfClubs } from "@/lib/golfApi";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -13,9 +14,20 @@ function SelectCoursePage() {
   const [isMapOpen, setIsMapOpen] = useState(false);
   const navigate = useNavigate();
 
-  const handleSelectCourse = (courseName: string) => {
-    // 골프장 선택 완료 시 scores 페이지로 이동
-    navigate({ to: "/scores" });
+
+
+  const handleSelectCourse = async (courseName: string) => {
+    try {
+      // 골프장 이름으로 검색하여 ID를 가져옵니다.
+      const results = await searchGolfClubs(courseName);
+      const courseId = results.length > 0 ? results[0].id : "test-1";
+      
+      // courseId를 포함하여 scores 페이지로 이동
+      navigate({ to: "/scores", search: { courseId } });
+    } catch (error) {
+      console.error("Failed to search golf course", error);
+      navigate({ to: "/scores" });
+    }
   };
 
   return (

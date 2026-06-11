@@ -11,11 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SelectCourseRouteImport } from './routes/select-course'
 import { Route as ScoresRouteImport } from './routes/scores'
-import { Route as ProfileSetupRouteImport } from './routes/profile-setup'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
-import { Route as AdminClubsRouteImport } from './routes/admin/clubs'
-import { Route as AdminApprovalsRouteImport } from './routes/admin/approvals'
 import { Route as OauthCallbackNaverRouteImport } from './routes/oauth/callback/naver'
 import { Route as OauthCallbackKakaoRouteImport } from './routes/oauth/callback/kakao'
 
@@ -29,11 +26,6 @@ const ScoresRoute = ScoresRouteImport.update({
   path: '/scores',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProfileSetupRoute = ProfileSetupRouteImport.update({
-  id: '/profile-setup',
-  path: '/profile-setup',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -42,16 +34,6 @@ const IndexRoute = IndexRouteImport.update({
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/admin/users',
   path: '/admin/users',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminClubsRoute = AdminClubsRouteImport.update({
-  id: '/admin/clubs',
-  path: '/admin/clubs',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminApprovalsRoute = AdminApprovalsRouteImport.update({
-  id: '/admin/approvals',
-  path: '/admin/approvals',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OauthCallbackNaverRoute = OauthCallbackNaverRouteImport.update({
@@ -67,22 +49,16 @@ const OauthCallbackKakaoRoute = OauthCallbackKakaoRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/profile-setup': typeof ProfileSetupRoute
   '/scores': typeof ScoresRoute
   '/select-course': typeof SelectCourseRoute
-  '/admin/approvals': typeof AdminApprovalsRoute
-  '/admin/clubs': typeof AdminClubsRoute
   '/admin/users': typeof AdminUsersRoute
   '/oauth/callback/kakao': typeof OauthCallbackKakaoRoute
   '/oauth/callback/naver': typeof OauthCallbackNaverRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/profile-setup': typeof ProfileSetupRoute
   '/scores': typeof ScoresRoute
   '/select-course': typeof SelectCourseRoute
-  '/admin/approvals': typeof AdminApprovalsRoute
-  '/admin/clubs': typeof AdminClubsRoute
   '/admin/users': typeof AdminUsersRoute
   '/oauth/callback/kakao': typeof OauthCallbackKakaoRoute
   '/oauth/callback/naver': typeof OauthCallbackNaverRoute
@@ -90,11 +66,8 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/profile-setup': typeof ProfileSetupRoute
   '/scores': typeof ScoresRoute
   '/select-course': typeof SelectCourseRoute
-  '/admin/approvals': typeof AdminApprovalsRoute
-  '/admin/clubs': typeof AdminClubsRoute
   '/admin/users': typeof AdminUsersRoute
   '/oauth/callback/kakao': typeof OauthCallbackKakaoRoute
   '/oauth/callback/naver': typeof OauthCallbackNaverRoute
@@ -103,33 +76,24 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/profile-setup'
     | '/scores'
     | '/select-course'
-    | '/admin/approvals'
-    | '/admin/clubs'
     | '/admin/users'
     | '/oauth/callback/kakao'
     | '/oauth/callback/naver'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/profile-setup'
     | '/scores'
     | '/select-course'
-    | '/admin/approvals'
-    | '/admin/clubs'
     | '/admin/users'
     | '/oauth/callback/kakao'
     | '/oauth/callback/naver'
   id:
     | '__root__'
     | '/'
-    | '/profile-setup'
     | '/scores'
     | '/select-course'
-    | '/admin/approvals'
-    | '/admin/clubs'
     | '/admin/users'
     | '/oauth/callback/kakao'
     | '/oauth/callback/naver'
@@ -137,11 +101,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ProfileSetupRoute: typeof ProfileSetupRoute
   ScoresRoute: typeof ScoresRoute
   SelectCourseRoute: typeof SelectCourseRoute
-  AdminApprovalsRoute: typeof AdminApprovalsRoute
-  AdminClubsRoute: typeof AdminClubsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   OauthCallbackKakaoRoute: typeof OauthCallbackKakaoRoute
   OauthCallbackNaverRoute: typeof OauthCallbackNaverRoute
@@ -163,13 +124,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ScoresRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/profile-setup': {
-      id: '/profile-setup'
-      path: '/profile-setup'
-      fullPath: '/profile-setup'
-      preLoaderRoute: typeof ProfileSetupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -182,20 +136,6 @@ declare module '@tanstack/react-router' {
       path: '/admin/users'
       fullPath: '/admin/users'
       preLoaderRoute: typeof AdminUsersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/clubs': {
-      id: '/admin/clubs'
-      path: '/admin/clubs'
-      fullPath: '/admin/clubs'
-      preLoaderRoute: typeof AdminClubsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/approvals': {
-      id: '/admin/approvals'
-      path: '/admin/approvals'
-      fullPath: '/admin/approvals'
-      preLoaderRoute: typeof AdminApprovalsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/oauth/callback/naver': {
@@ -217,11 +157,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ProfileSetupRoute: ProfileSetupRoute,
   ScoresRoute: ScoresRoute,
   SelectCourseRoute: SelectCourseRoute,
-  AdminApprovalsRoute: AdminApprovalsRoute,
-  AdminClubsRoute: AdminClubsRoute,
   AdminUsersRoute: AdminUsersRoute,
   OauthCallbackKakaoRoute: OauthCallbackKakaoRoute,
   OauthCallbackNaverRoute: OauthCallbackNaverRoute,

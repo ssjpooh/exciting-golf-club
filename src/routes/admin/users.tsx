@@ -5,11 +5,8 @@ import { onAuthStateChanged } from "firebase/auth";
 import {
   getAllUsers,
   updateUserRole,
-  updateUserClub,
-  getClubs,
   UserProfile,
   UserRole,
-  Club,
   getUserProfile,
   deleteUserRecord,
   updateUserNickname,
@@ -64,7 +61,6 @@ function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [search, setSearch] = useState("");
-  const [clubs, setClubs] = useState<Club[]>([]);
   const [currentUserProfile, setCurrentUserProfile] = useState<UserProfile | null>(null);
   
   // 닉네임 수정 상태
@@ -93,7 +89,6 @@ function AdminUsersPage() {
       setCurrentUserProfile(profile);
       setIsAdmin(true);
       fetchUsers();
-      fetchClubs();
     });
 
     return () => unsubscribe();
@@ -111,14 +106,7 @@ function AdminUsersPage() {
     }
   };
 
-  const fetchClubs = async () => {
-    try {
-      const data = await getClubs();
-      setClubs(data || []);
-    } catch (error) {
-      console.error("Failed to fetch clubs:", error);
-    }
-  };
+
 
   const handleRoleChange = async (targetUserId: string, newRole: UserRole) => {
     try {
@@ -152,19 +140,7 @@ function AdminUsersPage() {
     }
   };
 
-  const handleClubChange = async (userId: string, clubId: string) => {
-    try {
-      const club = clubs.find((c) => c.id === clubId);
-      if (!club) return;
-      await updateUserClub(userId, club.id, club.name);
-      setUsers((prev) =>
-        prev.map((u) => (u.uid === userId ? { ...u, clubId, clubName: club.name } : u)),
-      );
-      toast.success("클럽이 변경되었습니다.");
-    } catch (error) {
-      toast.error("클럽 변경에 실패했습니다.");
-    }
-  };
+
 
   const handleDeleteUser = async (userId: string, nickname: string) => {
     if (!window.confirm(`정말로 '${nickname}' 사용자를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
@@ -209,22 +185,13 @@ function AdminUsersPage() {
     // 본인 계정은 역할 수정 불가
     if (targetUser.email === auth.currentUser?.email) return false;
     
-    // 슈퍼 관리자는 모든 사람 수정 가능
     if (currentUserProfile?.role === "super_admin") return true;
-    
-    // 클럽장은 본인 클럽원의 역할만 수정 가능하며, 상대방이 운영진(staff)이나 일반 클럽원(member)이어야 함
-    if (currentUserProfile?.role === "master" && targetUser.clubId === currentUserProfile.clubId) {
-      return targetUser.role === "staff" || targetUser.role === "member";
-    }
     
     return false;
   };
 
   const filteredUsers = useMemo(() => {
     let list = users || [];
-    if (currentUserProfile?.role === "master") {
-      list = list.filter((u) => u.clubId === currentUserProfile.clubId);
-    }
     return list.filter(
       (u) =>
         u.nickname.toLowerCase().includes(search.toLowerCase()) ||
@@ -295,7 +262,6 @@ function AdminUsersPage() {
                   <TableHead className="w-[180px]">닉네임</TableHead>
                   <TableHead>이메일</TableHead>
                   <TableHead>등급</TableHead>
-                  <TableHead>소속 클럽</TableHead>
                   <TableHead className="text-right">설정</TableHead>
                 </TableRow>
               </TableHeader>
@@ -357,9 +323,6 @@ function AdminUsersPage() {
                             </>
                           )}
                         </div>
-                        <div className="text-[10px] font-bold text-slate-400 mt-0.5">
-                          {user.clubName || "클럽 미지정"}
-                        </div>
                       </TableCell>
 
                       <TableCell className="text-slate-500 text-xs">{user.email}</TableCell>
@@ -377,27 +340,7 @@ function AdminUsersPage() {
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <Select
-                          value={user.clubId || "none"}
-                          onValueChange={(val) => handleClubChange(user.uid, val)}
-                          disabled={currentUserProfile?.role !== "super_admin"}
-                        >
-                          <SelectTrigger className="w-[140px] h-8 text-[11px] font-bold border-slate-100 bg-slate-50/50">
-                            <SelectValue placeholder="클럽 미지정" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none" disabled>
-                              클럽을 선택하세요
-                            </SelectItem>
-                            {clubs.map((club) => (
-                              <SelectItem key={club.id} value={club.id}>
-                                {club.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
+
 
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
