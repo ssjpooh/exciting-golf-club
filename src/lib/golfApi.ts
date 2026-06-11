@@ -18,6 +18,7 @@ export async function searchGolfClubs(keyword: string) {
     });
     if (response.ok) {
       const data = await response.json();
+      console.log("[Golf API 검색 결과]:", data); // 콘솔창 출력 추가
       return data.courses.map((c: any) => ({
         id: c.id.toString(),
         name: `${c.club_name} - ${c.course_name}`,
@@ -49,6 +50,8 @@ export async function getCourseDetails(courseId: string) {
     
     if (response.ok) {
       const responseData = await response.json();
+      console.log("[Golf API 코스 상세 결과]:", responseData); // 콘솔창 출력 추가
+      
       const courseData = responseData.course || responseData;
       
       let holes = [];
@@ -76,10 +79,19 @@ export async function getCourseDetails(courseId: string) {
         holes: holes
       };
     } else {
-      throw new Error(`API 응답 오류: ${response.status}`);
+      console.warn(`API 응답 오류 (${response.status}). 빈 코스 템플릿을 반환합니다.`);
+      return {
+        id: courseId,
+        name: decodeURIComponent(courseId),
+        holes: []
+      };
     }
   } catch (error) {
     console.error("API 연결 실패:", error);
-    throw error;
+    return {
+      id: courseId,
+      name: decodeURIComponent(courseId),
+      holes: []
+    };
   }
 }

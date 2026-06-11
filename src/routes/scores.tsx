@@ -58,10 +58,14 @@ function RecordRoundDialog({
 
   useEffect(() => {
     if (open) {
-      if (courseInfo?.holes) {
+      if (courseInfo?.holes && courseInfo.holes.length > 0) {
         setHoles(courseInfo.holes.map((h: any) => ({ ...h, score: h.par, putts: 2 })));
       } else {
-        setHoles(Array.from({ length: 18 }, (_, i) => ({
+        // API 데이터가 없거나 에러가 나서 빈 템플릿이 온 경우 (태광CC 등)
+        const isNineHoles = courseInfo?.name?.includes("태광") || courseInfo?.name?.includes("9홀");
+        const defaultLength = isNineHoles ? 9 : 18;
+        
+        setHoles(Array.from({ length: defaultLength }, (_, i) => ({
           hole: i + 1,
           par: 4,
           distance: 300,
