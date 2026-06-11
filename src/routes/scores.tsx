@@ -179,12 +179,29 @@ function ScoresPage() {
   }, [navigate]);
 
   useEffect(() => {
-    if (courseId) {
+    if (courseId && !isLoading) {
+      const previousGame = games.find(g => g.courseId === courseId);
+      
       getCourseDetails(courseId).then(info => {
+        if (previousGame && previousGame.holes) {
+          // 이전 기록이 있다면 그 기록의 파(Par)와 거리 정보를 재사용합니다.
+          info.holes = info.holes.map((h: any, i: number) => ({
+            ...h,
+            par: previousGame.holes[i]?.par || h.par,
+            distance: previousGame.holes[i]?.distance || h.distance
+          }));
+        }
         setCourseInfo(info);
       }).catch(console.error);
     }
-  }, [courseId]);
+  }, [courseId, isLoading, games]);
+
+  const displayGames = useMemo(() => {
+    if (courseId) {
+      return games.filter(g => g.courseId === courseId);
+    }
+    return games;
+  }, [games, courseId]);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -226,15 +243,20 @@ function ScoresPage() {
           </Card>
         )}
 
-        {!courseInfo && (
+        {!courseId && (
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-bold">내 라운드 기록</h2>
             <Button onClick={() => setIsRecordOpen(true)} className="bg-teal-600"><Plus className="w-4 h-4 mr-1"/>기록 추가</Button>
           </div>
         )}
+        {courseId && (
+          <div className="flex justify-between items-center mt-8">
+            <h2 className="text-lg font-bold">이 골프장에서의 이전 기록</h2>
+          </div>
+        )}
 
         <div className="space-y-4">
-          {games.map(game => (
+          {displayGames.map(game => (
             <Card key={game.id} className="p-4 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-xs text-slate-500 font-bold">{game.date}</span>
@@ -252,7 +274,7 @@ function ScoresPage() {
               )}
             </Card>
           ))}
-          {games.length === 0 && (
+          {displayGames.length === 0 && (
             <div className="text-center py-10 text-slate-400">아직 등록된 기록이 없습니다.</div>
           )}
         </div>
