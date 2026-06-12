@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://api.golfcourseapi.com/v1";
+const API_BASE_URL = "https://golf-course-api.p.rapidapi.com";
 // env 파일에서 API 키를 가져옵니다. (설정되지 않았다면 빈 문자열)
 const API_KEY = import.meta.env.VITE_GOLF_API_KEY || "";
 
@@ -13,16 +13,25 @@ export async function searchGolfClubs(keyword: string) {
   }
   
   try {
-    const response = await fetch(`${API_BASE_URL}/search?search_query=${encodeURIComponent(keyword)}`, {
-      headers: { "Authorization": `Key ${API_KEY}` }
+    const response = await fetch(`${API_BASE_URL}/search?name=${encodeURIComponent(keyword)}`, {
+      headers: {
+        "Content-Type": "application/json",
+        "x-rapidapi-host": "golf-course-api.p.rapidapi.com",
+        "x-rapidapi-key": API_KEY
+      }
     });
     if (response.ok) {
       const data = await response.json();
       console.log("[Golf API 검색 결과]:", data); // 콘솔창 출력 추가
-      return data.courses.map((c: any) => ({
-        id: c.id.toString(),
-        name: `${c.club_name} - ${c.course_name}`,
-        location: `${c.location.city}, ${c.location.state}`
+      
+      if (!Array.isArray(data)) {
+        return [];
+      }
+
+      return data.map((c: any) => ({
+        id: c.name, // Use name as ID for robust details fetching
+        name: c.name,
+        location: `${c.city || ""}, ${c.state || ""}`.trim()
       }));
     } else {
       console.error("API 응답 오류:", response.status);
@@ -44,38 +53,47 @@ export async function getCourseDetails(courseId: string) {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/courses/${courseId}`, {
-      headers: { "Authorization": `Key ${API_KEY}` }
+    const searchName = decodeURIComponent(courseId);
+    const response = await fetch(`${API_BASE_URL}/search?name=${encodeURIComponent(searchName)}`, {
+      headers: {
+        "Content-Type": "application/json",
+        "x-rapidapi-host": "golf-course-api.p.rapidapi.com",
+        "x-rapidapi-key": API_KEY
+      }
     });
     
     if (response.ok) {
-      const responseData = await response.json();
-      console.log("[Golf API 코스 상세 결과]:", responseData); // 콘솔창 출력 추가
+      const data = await response.json();
+      console.log("[Golf API 코스 상세 결과]:", data); // 콘솔창 출력 추가
       
-      const courseData = responseData.course || responseData;
-      
-      let holes = [];
-      let defaultTee = null;
-      if (courseData.tees && courseData.tees.male && courseData.tees.male.length > 0) {
-        defaultTee = courseData.tees.male[0];
-        holes = defaultTee.holes.map((h: any, index: number) => ({
-          hole: index + 1,
-          par: h.par,
-          distance: h.yardage,
-          handicap: h.handicap
-        }));
+      if (!Array.isArray(data) || data.length === 0) {
+        throw new Error("No course details found");
       }
 
-      const apiHoleCount = defaultTee?.number_of_holes || courseData.holes || courseData.hole_count;
-      const validHoles = holes.filter((h: any) => h.par && h.par > 0);
+      const courseData = data[0];
       
-      if (apiHoleCount === 9 || (apiHoleCount == null && validHoles.length <= 9)) {
-        holes = holes.slice(0, 9);
+      let holes = [];
+      if (courseData.scorecard && Array.isArray(courseData.scorecard)) {
+        holes = courseData.scorecard.map((h: any) => {
+          let distance = 300; // default fallback
+          if (h.tees) {
+            const teeKeys = Object.keys(h.tees);
+            if (teeKeys.length > 0) {
+              distance = h.tees[teeKeys[0]].yards || distance;
+            }
+          }
+          return {
+            hole: h.Hole,
+            par: h.Par,
+            distance: distance,
+            handicap: h.Handicap || 0
+          };
+        });
       }
 
       return {
-        id: courseData.id.toString(),
-        name: `${courseData.club_name} - ${courseData.course_name}`,
+        id: courseData.name,
+        name: courseData.name,
         holes: holes
       };
     } else {
