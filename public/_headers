@@ -1,3 +1,11 @@
 /*
   Cross-Origin-Opener-Policy: same-origin-allow-popups
   Cross-Origin-Embedder-Policy: unsafe-none
+
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: 0
+
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
