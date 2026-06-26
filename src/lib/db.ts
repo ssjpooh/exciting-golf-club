@@ -47,6 +47,7 @@ export type Score = {
   stats: GameStats;
   handicap?: number;
   netScore?: number;
+  handicapType?: "total" | "hole" | "both";
   createdAt?: unknown;
 };
 

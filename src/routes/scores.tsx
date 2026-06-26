@@ -82,6 +82,7 @@ function RecordRoundDialog({
   const [memo, setMemo] = useState("");
   const [holes, setHoles] = useState<HoleScore[]>([]);
   const [handicapInput, setHandicapInput] = useState<number | "">(0);
+  const [handicapType, setHandicapType] = useState<"total" | "hole" | "both">("both");
   const [isNewCourse, setIsNewCourse] = useState(false);
   const [tempHoleCount, setTempHoleCount] = useState<number>(18);
   const [setupStep, setSetupStep] = useState<'choose_holes' | 'scorecard'>('scorecard');
@@ -91,6 +92,7 @@ function RecordRoundDialog({
       const hasHoles = courseInfo?.holes && courseInfo.holes.length > 0;
       setIsNewCourse(!hasHoles);
       setHandicapInput(defaultHandicap);
+      setHandicapType("both");
       setCourseSection(""); // Reset course section for new entry
 
       if (hasHoles) {
@@ -117,7 +119,7 @@ function RecordRoundDialog({
 
   const totalScore = useMemo(() => holes.reduce((acc, h) => acc + (h.score || 0), 0), [holes]);
   const totalPar = useMemo(() => holes.reduce((acc, h) => acc + (h.par || 0), 0), [holes]);
-  const showHcpColumn = handicapInput !== "" && handicapInput > 0;
+  const showHcpColumn = handicapType === 'hole' || handicapType === 'both';
 
   const handleHoleCountChange = (count: number) => {
     setTempHoleCount(count);
@@ -141,7 +143,18 @@ function RecordRoundDialog({
     try {
       const finalCourseId = courseInfo?.id || encodeURIComponent(location);
       const finalName = courseSection ? `${location} (${courseSection})` : location;
+      const hcpInputVal = handicapInput === "" ? 0 : Number(handicapInput);
       
+      let finalNetScore = 0;
+      if (handicapType === "total" || handicapType === "both") {
+        finalNetScore = totalScore - hcpInputVal;
+      } else if (handicapType === "hole") {
+        finalNetScore = holes.reduce((acc, h, i) => {
+          const strokes = getHoleHandicapStrokes(h, i, hcpInputVal, holes.length);
+          return acc + (h.score - strokes);
+        }, 0);
+      }
+
       if (isNewCourse) {
         const newCourseData = {
           id: finalCourseId,
@@ -162,11 +175,15 @@ function RecordRoundDialog({
         date,
         location: finalName,
         memo,
-        holes,
+        holes: holes.map(h => ({
+          ...h,
+          handicap: h.handicap || 0
+        })),
         total: totalScore,
         courseId: finalCourseId,
-        handicap: handicapInput === "" ? 0 : Number(handicapInput),
-        netScore: totalScore - (handicapInput === "" ? 0 : Number(handicapInput)),
+        handicap: hcpInputVal,
+        netScore: finalNetScore,
+        handicapType,
       });
       onOpenChange(false);
     } catch (err) {
@@ -174,6 +191,18 @@ function RecordRoundDialog({
       alert("골프장 정보 또는 점수 저장에 실패했습니다.");
     }
   };
+
+  const dialogNetScore = useMemo(() => {
+    const hcpInputVal = handicapInput === "" ? 0 : Number(handicapInput);
+    if (handicapType === "total" || handicapType === "both") {
+      return totalScore - hcpInputVal;
+    } else {
+      return holes.reduce((acc, h, i) => {
+        const strokes = getHoleHandicapStrokes(h, i, hcpInputVal, holes.length);
+        return acc + (h.score - strokes);
+      }, 0);
+    }
+  }, [totalScore, handicapInput, handicapType, holes]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -185,7 +214,7 @@ function RecordRoundDialog({
               <div className="flex items-center gap-4 text-sm font-normal">
                 <span className="bg-teal-700 px-3 py-1 rounded-full text-white font-bold">기본(Gross): {totalScore} 타</span>
                 {handicapInput > 0 && (
-                  <span className="bg-teal-900 px-3 py-1 rounded-full text-white font-bold">넷(Net): {totalScore - handicapInput} 타</span>
+                  <span className="bg-teal-900 px-3 py-1 rounded-full text-white font-bold">넷(Net): {dialogNetScore} 타</span>
                 )}
               </div>
             )}
@@ -206,14 +235,14 @@ function RecordRoundDialog({
 
               <div className="bg-white p-4 rounded-xl border shadow-sm space-y-4">
                 {/* 날짜 & 핸디캡 */}
-                <div className="flex gap-4 w-full items-center">
-                  <div className="flex-1 max-w-[150px]">
+                <div className="flex flex-wrap gap-4 w-full items-end">
+                  <div className="flex-1 min-w-[120px] max-w-[150px]">
                     <Label className="text-xs font-bold text-slate-500">날짜</Label>
                     <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="mt-1 bg-white h-9 text-xs" />
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-[140px] max-w-[160px]">
                     <Label className="text-xs font-bold text-slate-500">내 핸디캡 (타수 차감)</Label>
-                    <div className="flex items-center mt-1 h-9 bg-white border rounded-md overflow-hidden max-w-[160px] shadow-sm">
+                    <div className="flex items-center mt-1 h-9 bg-white border rounded-md overflow-hidden shadow-sm">
                       <Button
                         type="button"
                         variant="ghost"
@@ -242,6 +271,18 @@ function RecordRoundDialog({
                         +
                       </Button>
                     </div>
+                  </div>
+                  <div className="flex-1 min-w-[180px]">
+                    <Label className="text-xs font-bold text-slate-500">핸디캡 적용 방식</Label>
+                    <select
+                      value={handicapType}
+                      onChange={e => setHandicapType(e.target.value as any)}
+                      className="mt-1 flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-xs font-medium shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      <option value="total">총 타수에서 차감</option>
+                      <option value="hole">홀별 난이도에 따라 차감</option>
+                      <option value="both">둘 다 적용</option>
+                    </select>
                   </div>
                 </div>
 
@@ -313,14 +354,14 @@ function RecordRoundDialog({
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               <div className="flex flex-col gap-3 bg-slate-50 p-4 rounded-xl border">
                 {/* 날짜 & 핸디캡 */}
-                <div className="flex gap-4 w-full items-center">
-                  <div className="flex-1 max-w-[150px]">
+                <div className="flex flex-wrap gap-4 w-full items-end">
+                  <div className="flex-1 min-w-[120px] max-w-[150px]">
                     <Label className="text-xs font-bold text-slate-500">날짜</Label>
                     <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="mt-1 bg-white h-9 text-xs" />
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-[140px] max-w-[160px]">
                     <Label className="text-xs font-bold text-slate-500">내 핸디캡 (타수 차감)</Label>
-                    <div className="flex items-center mt-1 h-9 bg-white border rounded-md overflow-hidden max-w-[160px] shadow-sm">
+                    <div className="flex items-center mt-1 h-9 bg-white border rounded-md overflow-hidden shadow-sm">
                       <Button
                         type="button"
                         variant="ghost"
@@ -349,6 +390,18 @@ function RecordRoundDialog({
                         +
                       </Button>
                     </div>
+                  </div>
+                  <div className="flex-1 min-w-[180px]">
+                    <Label className="text-xs font-bold text-slate-500">핸디캡 적용 방식</Label>
+                    <select
+                      value={handicapType}
+                      onChange={e => setHandicapType(e.target.value as any)}
+                      className="mt-1 flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-xs font-medium shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      <option value="total">총 타수에서 차감</option>
+                      <option value="hole">홀별 난이도에 따라 차감</option>
+                      <option value="both">둘 다 적용</option>
+                    </select>
                   </div>
                 </div>
 
@@ -407,7 +460,7 @@ function RecordRoundDialog({
                         handicapInput === "" ? 0 : Number(handicapInput),
                         holes.length
                       );
-                      const showNetDisplay = hcpStrokes > 0 && h.score > 0;
+                      const showNetDisplay = showHcpColumn && hcpStrokes > 0 && h.score > 0;
 
                       return (
                         <tr key={i}>
@@ -624,7 +677,10 @@ function ScoresPage() {
                   </span>
                   {game.handicap !== undefined && game.handicap > 0 && (
                     <span className="text-sm font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
-                      네트(적용): {game.netScore ?? (game.total - game.handicap)}타 (HCP {game.handicap})
+                      네트(적용): {game.netScore ?? (game.total - game.handicap)}타 ({
+                        game.handicapType === "total" ? "총합 차감" :
+                        game.handicapType === "hole" ? "홀별 차감" : "둘 다 적용"
+                      } / HCP {game.handicap})
                     </span>
                   )}
                 </div>
