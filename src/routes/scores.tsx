@@ -10,6 +10,7 @@ import {
   getUserProfile,
   UserProfile,
   deleteSavedScore,
+  saveGolfCourseToDb,
 } from "@/lib/db";
 import { getCourseDetails } from "@/lib/golfApi";
 import { Card } from "@/components/ui/card";
@@ -55,15 +56,22 @@ function RecordRoundDialog({
   const [location, setLocation] = useState(courseInfo?.name || "");
   const [memo, setMemo] = useState("");
   const [holes, setHoles] = useState<HoleScore[]>([]);
+  const [handicapInput, setHandicapInput] = useState<number>(0);
+  const [isNewCourse, setIsNewCourse] = useState(false);
+  const [tempHoleCount, setTempHoleCount] = useState<number>(18);
 
   useEffect(() => {
     if (open) {
-      if (courseInfo?.holes && courseInfo.holes.length > 0) {
+      const hasHoles = courseInfo?.holes && courseInfo.holes.length > 0;
+      setIsNewCourse(!hasHoles);
+      setHandicapInput(0);
+
+      if (hasHoles) {
         setHoles(courseInfo.holes.map((h: any) => ({ ...h, score: h.par, putts: 2 })));
       } else {
-        // API 데이터가 없거나 에러가 나서 빈 템플릿이 온 경우 (태광CC 등)
         const isNineHoles = courseInfo?.name?.includes("태광") || courseInfo?.name?.includes("9홀");
         const defaultLength = isNineHoles ? 9 : 18;
+        setTempHoleCount(defaultLength);
         
         setHoles(Array.from({ length: defaultLength }, (_, i) => ({
           hole: i + 1,
@@ -81,22 +89,58 @@ function RecordRoundDialog({
   const totalScore = useMemo(() => holes.reduce((acc, h) => acc + (h.score || 0), 0), [holes]);
   const totalPar = useMemo(() => holes.reduce((acc, h) => acc + (h.par || 0), 0), [holes]);
 
+  const handleHoleCountChange = (count: number) => {
+    setTempHoleCount(count);
+    setHoles(Array.from({ length: count }, (_, i) => ({
+      hole: i + 1,
+      par: 4,
+      distance: 300,
+      score: 4,
+      putts: 2,
+      handicap: 0
+    })));
+  };
+
   const updateHole = (idx: number, field: keyof HoleScore, value: number) => {
     const newHoles = [...holes];
     newHoles[idx] = { ...newHoles[idx], [field]: value };
     setHoles(newHoles);
   };
 
-  const save = () => {
-    onSave({
-      date,
-      location,
-      memo,
-      holes,
-      total: totalScore,
-      courseId: courseInfo?.id,
-    });
-    onOpenChange(false);
+  const save = async () => {
+    try {
+      const finalCourseId = courseInfo?.id || encodeURIComponent(location);
+      if (isNewCourse) {
+        const newCourseData = {
+          id: finalCourseId,
+          name: location,
+          holeCount: tempHoleCount,
+          totalPar: holes.reduce((acc, h) => acc + (h.par || 0), 0),
+          holes: holes.map(h => ({
+            hole: h.hole,
+            par: h.par,
+            distance: h.distance,
+            handicap: h.handicap || 0
+          }))
+        };
+        await saveGolfCourseToDb(newCourseData);
+      }
+
+      onSave({
+        date,
+        location,
+        memo,
+        holes,
+        total: totalScore,
+        courseId: finalCourseId,
+        handicap: handicapInput,
+        netScore: totalScore - handicapInput,
+      });
+      onOpenChange(false);
+    } catch (err) {
+      console.error("Failed to save course or score", err);
+      alert("골프장 정보 또는 점수 저장에 실패했습니다.");
+    }
   };
 
   return (
@@ -105,11 +149,16 @@ function RecordRoundDialog({
         <DialogHeader className="bg-teal-600 px-5 py-4 text-white shrink-0">
           <DialogTitle className="text-lg font-bold flex items-center justify-between">
             <span>라운드 기록하기</span>
-            <span className="text-xl">{totalScore} 타</span>
+            <div className="flex items-center gap-4 text-sm font-normal">
+              <span className="bg-teal-700 px-3 py-1 rounded-full text-white font-bold">기본(Gross): {totalScore} 타</span>
+              {handicapInput > 0 && (
+                <span className="bg-teal-900 px-3 py-1 rounded-full text-white font-bold">넷(Net): {totalScore - handicapInput} 타</span>
+              )}
+            </div>
           </DialogTitle>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <Label>날짜</Label>
               <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
@@ -118,13 +167,45 @@ function RecordRoundDialog({
               <Label>골프장 이름</Label>
               <Input value={location} onChange={e => setLocation(e.target.value)} />
             </div>
+            <div>
+              <Label>개인 핸디캡 (타수 차감)</Label>
+              <Input type="number" value={handicapInput} onChange={e => setHandicapInput(Number(e.target.value))} min={0} max={72} />
+            </div>
           </div>
+
+          {isNewCourse && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
+              <p className="text-xs font-bold text-amber-800">
+                💡 등록되지 않은 골프장입니다. 코스의 홀 수와 정보를 입력해주시면 다른 골퍼들과 공유됩니다.
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={tempHoleCount === 9 ? "default" : "outline"}
+                  onClick={() => handleHoleCountChange(9)}
+                  className={`flex-1 h-9 ${tempHoleCount === 9 ? "bg-teal-600 hover:bg-teal-700 text-white font-bold" : ""}`}
+                >
+                  9홀 코스
+                </Button>
+                <Button
+                  type="button"
+                  variant={tempHoleCount === 18 ? "default" : "outline"}
+                  onClick={() => handleHoleCountChange(18)}
+                  className={`flex-1 h-9 ${tempHoleCount === 18 ? "bg-teal-600 hover:bg-teal-700 text-white font-bold" : ""}`}
+                >
+                  18홀 코스
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div className="overflow-x-auto">
             <table className="w-full text-center border-collapse">
               <thead>
                 <tr className="bg-slate-100">
                   <th className="p-2 border">Hole</th>
                   <th className="p-2 border">Par</th>
+                  <th className="p-2 border">거리 (m)</th>
                   <th className="p-2 border">HCP</th>
                   <th className="p-2 border">Score</th>
                   <th className="p-2 border">Putts</th>
@@ -135,10 +216,13 @@ function RecordRoundDialog({
                   <tr key={i}>
                     <td className="p-2 border font-bold">{h.hole}</td>
                     <td className="p-2 border">
-                      <Input type="number" value={h.par} onChange={e => updateHole(i, "par", Number(e.target.value))} className="w-16 mx-auto text-center" />
+                      <Input type="number" value={h.par} onChange={e => updateHole(i, "par", Number(e.target.value))} className="w-14 mx-auto text-center" />
                     </td>
                     <td className="p-2 border">
-                      <Input type="number" value={h.handicap || ""} onChange={e => updateHole(i, "handicap", Number(e.target.value))} className="w-16 mx-auto text-center text-slate-400" placeholder="HCP" />
+                      <Input type="number" value={h.distance} onChange={e => updateHole(i, "distance", Number(e.target.value))} className="w-20 mx-auto text-center" placeholder="m" />
+                    </td>
+                    <td className="p-2 border">
+                      <Input type="number" value={h.handicap || ""} onChange={e => updateHole(i, "handicap", Number(e.target.value))} className="w-14 mx-auto text-center text-slate-400" placeholder="HCP" />
                     </td>
                     <td className="p-2 border">
                       <Input type="number" value={h.score} onChange={e => updateHole(i, "score", Number(e.target.value))} className="w-16 mx-auto text-center font-bold text-teal-600" />
@@ -154,7 +238,7 @@ function RecordRoundDialog({
         </div>
         <div className="p-4 bg-slate-50 border-t shrink-0 flex justify-end gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>취소</Button>
-          <Button onClick={save} className="bg-teal-600 hover:bg-teal-700">저장하기</Button>
+          <Button onClick={save} className="bg-teal-600 hover:bg-teal-700 text-white font-bold">저장하기</Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -271,7 +355,16 @@ function ScoresPage() {
             <Card key={game.id} className="p-4 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-xs text-slate-500 font-bold">{game.date}</span>
-                <span className="text-lg font-black text-teal-600">{game.total} 타</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                    그로스(기본): {game.total}타
+                  </span>
+                  {game.handicap !== undefined && game.handicap > 0 && (
+                    <span className="text-sm font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+                      네트(적용): {game.netScore ?? (game.total - game.handicap)}타 (HCP {game.handicap})
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="text-sm font-bold flex items-center gap-1">
                 <MapPin className="w-3 h-3 text-slate-400" /> {game.location || "위치 정보 없음"}

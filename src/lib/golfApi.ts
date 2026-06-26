@@ -1,3 +1,5 @@
+import { getGolfCourseFromDb } from "./db";
+
 const API_BASE_URL = "https://golf-course-api.p.rapidapi.com";
 // env 파일에서 API 키를 가져옵니다. (설정되지 않았다면 빈 문자열)
 const API_KEY = import.meta.env.VITE_GOLF_API_KEY || "";
@@ -48,8 +50,29 @@ export async function searchGolfClubs(keyword: string) {
  * - API 키가 없으면 18홀 더미 데이터를 생성하여 반환합니다.
  */
 export async function getCourseDetails(courseId: string) {
+  // 1순위: DB에 이미 등록되어 있는지 확인
+  try {
+    const dbCourse = await getGolfCourseFromDb(courseId);
+    if (dbCourse) {
+      console.log("[Golf API] DB에서 골프장 정보 로드 성공:", dbCourse);
+      return {
+        id: dbCourse.id,
+        name: dbCourse.name,
+        holes: dbCourse.holes
+      };
+    }
+  } catch (dbError) {
+    console.error("[Golf API] DB 조회 중 오류 발생 (API Fallback 시도):", dbError);
+  }
+
+  // 2순위: API를 사용한 조회 (Fallback)
   if (!API_KEY) {
-    throw new Error("API 키가 설정되지 않았습니다.");
+    console.warn("API 키가 설정되지 않았습니다. 빈 코스 템플릿을 반환합니다.");
+    return {
+      id: courseId,
+      name: decodeURIComponent(courseId),
+      holes: []
+    };
   }
 
   try {
@@ -64,7 +87,7 @@ export async function getCourseDetails(courseId: string) {
     
     if (response.ok) {
       const data = await response.json();
-      console.log("[Golf API 코스 상세 결과]:", data); // 콘솔창 출력 추가
+      console.log("[Golf API 코스 상세 결과]:", data);
       
       if (!Array.isArray(data) || data.length === 0) {
         throw new Error("No course details found");

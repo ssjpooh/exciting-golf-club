@@ -45,6 +45,24 @@ export type Score = {
   memo?: string;
   matchType?: string;
   stats: GameStats;
+  handicap?: number;
+  netScore?: number;
+  createdAt?: unknown;
+};
+
+export type GolfCourseHole = {
+  hole: number;
+  par: number;
+  distance: number;
+  handicap?: number;
+};
+
+export type GolfCourse = {
+  id: string;
+  name: string;
+  holeCount: number;
+  totalPar: number;
+  holes: GolfCourseHole[];
   createdAt?: unknown;
 };
 
@@ -353,6 +371,25 @@ export async function updateUserNickname(userId: string, newNickname: string) {
   const userRef = doc(db, "users", userId);
   await updateDoc(userRef, {
     nickname: newNickname,
+  });
+}
+
+// 골프장 정보 단건 조회
+export async function getGolfCourseFromDb(courseId: string): Promise<GolfCourse | null> {
+  const courseRef = doc(db, "golf_courses", courseId);
+  const courseSnap = await getDoc(courseRef);
+  if (courseSnap.exists()) {
+    return courseSnap.data() as GolfCourse;
+  }
+  return null;
+}
+
+// 신규 골프장 정보 저장
+export async function saveGolfCourseToDb(course: GolfCourse): Promise<void> {
+  const courseRef = doc(db, "golf_courses", course.id);
+  await setDoc(courseRef, {
+    ...course,
+    createdAt: serverTimestamp(),
   });
 }
 
