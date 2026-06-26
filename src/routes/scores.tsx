@@ -44,6 +44,25 @@ export const Route = createFileRoute("/scores")({
   component: ScoresPage,
 });
 
+function getHoleHandicapStrokes(
+  h: HoleScore,
+  index: number,
+  totalHandicap: number,
+  totalHoles: number
+): number {
+  if (!totalHandicap) return 0;
+  const baseStrokes = Math.floor(totalHandicap / totalHoles);
+  const remainder = totalHandicap % totalHoles;
+
+  // 홀별 난이도 정보(1 ~ totalHoles)가 입력되어 있는 경우
+  if (h.handicap && h.handicap >= 1 && h.handicap <= totalHoles) {
+    return baseStrokes + (h.handicap <= remainder ? 1 : 0);
+  }
+
+  // 홀별 난이도가 없으면 순서대로 분배
+  return baseStrokes + (index < remainder ? 1 : 0);
+}
+
 function RecordRoundDialog({
   open,
   onOpenChange,
@@ -377,32 +396,61 @@ function RecordRoundDialog({
                       <th className="p-2 border">Putts</th>
                       <th className="p-2 border">Par</th>
                       <th className="p-2 border">거리 (m)</th>
-                      {showHcpColumn && <th className="p-2 border">HCP</th>}
+                      {showHcpColumn && <th className="p-2 border">홀 난이도</th>}
                     </tr>
                   </thead>
                   <tbody>
-                    {holes.map((h, i) => (
-                      <tr key={i}>
-                        <td className="p-2 border font-bold">{h.hole}</td>
-                        <td className="p-2 border">
-                          <Input type="number" value={h.score} onChange={e => updateHole(i, "score", Number(e.target.value))} className="w-16 mx-auto text-center font-bold text-teal-600" />
-                        </td>
-                        <td className="p-2 border">
-                          <Input type="number" value={h.putts} onChange={e => updateHole(i, "putts", Number(e.target.value))} className="w-16 mx-auto text-center" />
-                        </td>
-                        <td className="p-2 border">
-                          <Input type="number" value={h.par} onChange={e => updateHole(i, "par", Number(e.target.value))} className="w-14 mx-auto text-center" />
-                        </td>
-                        <td className="p-2 border">
-                          <Input type="number" value={h.distance} onChange={e => updateHole(i, "distance", Number(e.target.value))} className="w-20 mx-auto text-center" placeholder="m" />
-                        </td>
-                        {showHcpColumn && (
+                    {holes.map((h, i) => {
+                      const hcpStrokes = getHoleHandicapStrokes(
+                        h,
+                        i,
+                        handicapInput === "" ? 0 : Number(handicapInput),
+                        holes.length
+                      );
+                      const showNetDisplay = hcpStrokes > 0 && h.score > 0;
+
+                      return (
+                        <tr key={i}>
+                          <td className="p-2 border font-bold">{h.hole}</td>
                           <td className="p-2 border">
-                            <Input type="number" value={h.handicap || ""} onChange={e => updateHole(i, "handicap", Number(e.target.value))} className="w-14 mx-auto text-center text-slate-400" placeholder="HCP" />
+                            {showNetDisplay ? (
+                              <div className="flex flex-col items-center gap-0.5 min-w-[70px]">
+                                <Input
+                                  type="number"
+                                  value={h.score}
+                                  onChange={e => updateHole(i, "score", Number(e.target.value))}
+                                  className="w-16 mx-auto text-center font-bold text-teal-600"
+                                />
+                                <span className="text-[10px] font-bold text-slate-400">
+                                  Net: {h.score - hcpStrokes} (-{hcpStrokes})
+                                </span>
+                              </div>
+                            ) : (
+                              <Input
+                                type="number"
+                                value={h.score}
+                                onChange={e => updateHole(i, "score", Number(e.target.value))}
+                                className="w-16 mx-auto text-center font-bold text-teal-600"
+                              />
+                            )}
                           </td>
-                        )}
-                      </tr>
-                    ))}
+                          <td className="p-2 border">
+                            <Input type="number" value={h.putts} onChange={e => updateHole(i, "putts", Number(e.target.value))} className="w-16 mx-auto text-center" />
+                          </td>
+                          <td className="p-2 border">
+                            <Input type="number" value={h.par} onChange={e => updateHole(i, "par", Number(e.target.value))} className="w-14 mx-auto text-center" />
+                          </td>
+                          <td className="p-2 border">
+                            <Input type="number" value={h.distance} onChange={e => updateHole(i, "distance", Number(e.target.value))} className="w-20 mx-auto text-center" placeholder="m" />
+                          </td>
+                          {showHcpColumn && (
+                            <td className="p-2 border">
+                              <Input type="number" value={h.handicap || ""} onChange={e => updateHole(i, "handicap", Number(e.target.value))} className="w-14 mx-auto text-center text-slate-400" placeholder="난이도" />
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
