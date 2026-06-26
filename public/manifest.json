@@ -1,7 +1,7 @@
 {
-  "name": "익사이팅 볼링 클럽",
-  "short_name": "볼링클럽",
-  "description": "볼링 점수 기록 및 통계 관리 서비스",
+  "name": "익사이팅 골프 클럽",
+  "short_name": "골프클럽",
+  "description": "골프 점수 기록 및 통계 관리 서비스",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0d9488",

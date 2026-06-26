@@ -77,7 +77,7 @@ function RecordRoundDialog({
       setCourseSection(""); // Reset course section for new entry
 
       if (hasHoles) {
-        setHoles(courseInfo.holes.map((h: any) => ({ ...h, score: h.par, putts: 2 })));
+        setHoles(courseInfo.holes.map((h: any) => ({ ...h, score: h.par, strategy: "" })));
         setSetupStep('scorecard');
       } else {
         setSetupStep('choose_holes'); // New course: ask how many holes first
@@ -107,14 +107,13 @@ function RecordRoundDialog({
     setHoles(Array.from({ length: count }, (_, i) => ({
       hole: i + 1,
       par: 4,
-      distance: 300,
       score: 4,
-      putts: 2,
+      strategy: "",
       handicap: 0
     })));
   };
 
-  const updateHole = (idx: number, field: keyof HoleScore, value: number) => {
+  const updateHole = (idx: number, field: keyof HoleScore, value: number | string) => {
     const newHoles = [...holes];
     newHoles[idx] = { ...newHoles[idx], [field]: value };
     setHoles(newHoles);
@@ -144,7 +143,6 @@ function RecordRoundDialog({
           holes: holes.map(h => ({
             hole: h.hole,
             par: h.par,
-            distance: h.distance,
             handicap: h.handicap || 0
           }))
         };
@@ -433,9 +431,8 @@ function RecordRoundDialog({
                     <tr className="bg-slate-100">
                       <th className="p-2 border">Hole</th>
                       <th className="p-2 border">Score</th>
-                      <th className="p-2 border">Putts</th>
                       <th className="p-2 border">Par</th>
-                      <th className="p-2 border">거리 (m)</th>
+                      <th className="p-2 border">공략법</th>
                       {showHcpColumn && <th className="p-2 border">홀 핸디캡</th>}
                     </tr>
                   </thead>
@@ -470,13 +467,10 @@ function RecordRoundDialog({
                             )}
                           </td>
                           <td className="p-2 border">
-                            <Input type="number" value={h.putts} onChange={e => updateHole(i, "putts", Number(e.target.value))} className="w-16 mx-auto text-center" />
-                          </td>
-                          <td className="p-2 border">
                             <Input type="number" value={h.par} onChange={e => updateHole(i, "par", Number(e.target.value))} className="w-14 mx-auto text-center" />
                           </td>
                           <td className="p-2 border">
-                            <Input type="number" value={h.distance} onChange={e => updateHole(i, "distance", Number(e.target.value))} className="w-20 mx-auto text-center" placeholder="m" />
+                            <Input type="text" value={h.strategy || ""} onChange={e => updateHole(i, "strategy", e.target.value)} className="w-32 mx-auto text-center" placeholder="공략법" />
                           </td>
                           {showHcpColumn && (
                             <td className="p-2 border">
@@ -538,11 +532,10 @@ function ScoresPage() {
       
       getCourseDetails(courseId, courseName).then(info => {
         if (previousGame && previousGame.holes) {
-          // 이전 기록이 있다면 그 기록의 파(Par)와 거리 정보를 재사용합니다.
+          // 이전 기록이 있다면 그 기록의 파(Par) 정보를 재사용합니다.
           info.holes = info.holes.map((h: any, i: number) => ({
             ...h,
-            par: previousGame.holes[i]?.par || h.par,
-            distance: previousGame.holes[i]?.distance || h.distance
+            par: previousGame.holes[i]?.par || h.par
           }));
         }
         setCourseInfo(info);

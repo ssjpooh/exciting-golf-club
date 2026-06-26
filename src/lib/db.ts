@@ -19,9 +19,10 @@ import { db } from "./firebase";
 export type HoleScore = {
   hole: number;
   par: number;
-  distance: number;
   score: number;
   putts?: number;
+  distance?: number;
+  strategy?: string;
   handicap?: number;
 };
 
@@ -54,7 +55,7 @@ export type Score = {
 export type GolfCourseHole = {
   hole: number;
   par: number;
-  distance: number;
+  distance?: number;
   handicap?: number;
 };
 
