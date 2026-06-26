@@ -71,7 +71,7 @@ function LoginPage() {
 
           if (profile) {
             // 기본적으로 로그인 후 골프장 선택 화면으로 이동
-            navigate({ to: "/select-course", replace: true });
+            navigate({ to: "/scores", replace: true });
           }
         } catch (err) {
           console.error("Profile check error:", err);

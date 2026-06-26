@@ -639,7 +639,7 @@ function ScoresPage() {
         {!courseId && (
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-bold">내 라운드 기록</h2>
-            <Button onClick={() => setIsRecordOpen(true)} className="bg-teal-600"><Plus className="w-4 h-4 mr-1"/>기록 추가</Button>
+            <Button onClick={() => navigate({ to: "/select-course" })} className="bg-teal-600"><Plus className="w-4 h-4 mr-1"/>기록 추가</Button>
           </div>
         )}
         {courseId && (
@@ -676,6 +676,45 @@ function ScoresPage() {
                   <span className="bg-red-50 text-red-600 px-2 py-1 rounded">버디 {game.stats.birdies}</span>
                   <span className="bg-teal-50 text-teal-600 px-2 py-1 rounded">파 {game.stats.pars}</span>
                   <span className="bg-slate-100 px-2 py-1 rounded">보기 {game.stats.bogeys}</span>
+                </div>
+              )}
+              {game.holes && game.holes.length > 0 && (
+                <div className="mt-3 text-[10px] sm:text-xs bg-white rounded border overflow-hidden">
+                  {Array.from({ length: Math.ceil(game.holes.length / 9) }).map((_, chunkIndex) => {
+                    const chunkHoles = game.holes!.slice(chunkIndex * 9, (chunkIndex + 1) * 9);
+                    const chunkParTotal = chunkHoles.reduce((sum, h) => sum + (h.par || 0), 0);
+                    const chunkScoreTotal = chunkHoles.reduce((sum, h) => sum + (h.score || 0), 0);
+
+                    return (
+                      <div key={chunkIndex} className={`${chunkIndex > 0 ? "border-t" : ""} overflow-x-auto`}>
+                        <table className="w-full text-center border-collapse whitespace-nowrap">
+                          <thead>
+                            <tr className="bg-slate-50">
+                              <th className="p-1 sm:p-1.5 border-b border-r text-slate-500 font-normal w-10 sm:w-12">{chunkIndex === 0 ? "OUT" : "IN"}</th>
+                              {chunkHoles.map(h => <th key={`hole-${h.hole}`} className="p-1 sm:p-1.5 border-b border-r text-slate-500 font-normal min-w-[24px] sm:min-w-[32px]">{h.hole}</th>)}
+                              <th className="p-1 sm:p-1.5 border-b text-slate-500 font-normal min-w-[32px]">합</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td className="p-1 sm:p-1.5 border-r text-slate-500">Par</td>
+                              {chunkHoles.map(h => <td key={`par-${h.hole}`} className="p-1 sm:p-1.5 border-r">{h.par}</td>)}
+                              <td className="p-1 sm:p-1.5 font-bold">{chunkParTotal}</td>
+                            </tr>
+                            <tr className="bg-slate-50/50">
+                              <td className="p-1 sm:p-1.5 border-r text-teal-700 font-bold">Score</td>
+                              {chunkHoles.map(h => (
+                                <td key={`score-${h.hole}`} className={`p-1 sm:p-1.5 border-r font-bold ${(h.score || 0) < (h.par || 0) ? 'text-red-500' : (h.score || 0) > (h.par || 0) ? 'text-blue-500' : 'text-slate-700'}`}>
+                                  {h.score}
+                                </td>
+                              ))}
+                              <td className="p-1 sm:p-1.5 font-bold text-teal-700">{chunkScoreTotal}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </Card>
