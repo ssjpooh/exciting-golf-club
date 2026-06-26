@@ -62,7 +62,7 @@ function RecordRoundDialog({
   const [courseSection, setCourseSection] = useState("");
   const [memo, setMemo] = useState("");
   const [holes, setHoles] = useState<HoleScore[]>([]);
-  const [handicapInput, setHandicapInput] = useState<number>(0);
+  const [handicapInput, setHandicapInput] = useState<number | "">(0);
   const [isNewCourse, setIsNewCourse] = useState(false);
   const [tempHoleCount, setTempHoleCount] = useState<number>(18);
   const [setupStep, setSetupStep] = useState<'choose_holes' | 'scorecard'>('scorecard');
@@ -98,6 +98,7 @@ function RecordRoundDialog({
 
   const totalScore = useMemo(() => holes.reduce((acc, h) => acc + (h.score || 0), 0), [holes]);
   const totalPar = useMemo(() => holes.reduce((acc, h) => acc + (h.par || 0), 0), [holes]);
+  const showHcpColumn = handicapInput !== "" && handicapInput > 0;
 
   const handleHoleCountChange = (count: number) => {
     setTempHoleCount(count);
@@ -145,8 +146,8 @@ function RecordRoundDialog({
         holes,
         total: totalScore,
         courseId: finalCourseId,
-        handicap: handicapInput,
-        netScore: totalScore - handicapInput,
+        handicap: handicapInput === "" ? 0 : Number(handicapInput),
+        netScore: totalScore - (handicapInput === "" ? 0 : Number(handicapInput)),
       });
       onOpenChange(false);
     } catch (err) {
@@ -184,27 +185,62 @@ function RecordRoundDialog({
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white p-4 rounded-xl border shadow-sm">
-                <div>
-                  <Label className="text-xs font-bold text-slate-500">날짜</Label>
-                  <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="mt-1" />
+              <div className="bg-white p-4 rounded-xl border shadow-sm space-y-4">
+                {/* 날짜 & 핸디캡 */}
+                <div className="flex gap-4 w-full items-center">
+                  <div className="flex-1 max-w-[150px]">
+                    <Label className="text-xs font-bold text-slate-500">날짜</Label>
+                    <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="mt-1 bg-white h-9 text-xs" />
+                  </div>
+                  <div className="flex-1">
+                    <Label className="text-xs font-bold text-slate-500">내 핸디캡 (타수 차감)</Label>
+                    <div className="flex items-center mt-1 h-9 bg-white border rounded-md overflow-hidden max-w-[160px] shadow-sm">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="h-full px-3 hover:bg-slate-100 border-r rounded-none text-slate-500 font-bold"
+                        onClick={() => setHandicapInput(prev => Math.max(0, Number(prev) - 1))}
+                      >
+                        -
+                      </Button>
+                      <Input
+                        type="number"
+                        value={handicapInput}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setHandicapInput(val === "" ? "" : Number(val));
+                        }}
+                        className="border-none text-center h-full w-full focus-visible:ring-0 font-bold text-slate-800 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        min={0}
+                        max={72}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="h-full px-3 hover:bg-slate-100 border-l rounded-none text-slate-500 font-bold"
+                        onClick={() => setHandicapInput(prev => Math.min(72, Number(prev) + 1))}
+                      >
+                        +
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-xs font-bold text-slate-500">내 핸디캡 (타수 차감)</Label>
-                  <Input type="number" value={handicapInput} onChange={e => setHandicapInput(Number(e.target.value))} min={0} max={72} className="mt-1" />
-                </div>
-                <div>
-                  <Label className="text-xs font-bold text-slate-500">골프장 이름</Label>
-                  <Input value={location} onChange={e => setLocation(e.target.value)} className="mt-1" />
-                </div>
-                <div>
-                  <Label className="text-xs font-bold text-slate-500">코스/코스조합 이름 (선택)</Label>
-                  <Input 
-                    value={courseSection} 
-                    onChange={e => setCourseSection(e.target.value)} 
-                    placeholder="예: 동/서 코스, 아웃코스" 
-                    className="mt-1" 
-                  />
+
+                {/* 골프장 이름 & 코스조합 */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs font-bold text-slate-500">골프장 이름</Label>
+                    <Input value={location} onChange={e => setLocation(e.target.value)} className="mt-1" />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-bold text-slate-500">코스/코스조합 이름 (선택)</Label>
+                    <Input 
+                      value={courseSection} 
+                      onChange={e => setCourseSection(e.target.value)} 
+                      placeholder="예: 동/서 코스, 아웃코스" 
+                      className="mt-1" 
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -256,16 +292,49 @@ function RecordRoundDialog({
         ) : (
           <>
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              <div className="flex flex-col gap-4 bg-slate-50 p-4 rounded-xl border">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 w-full">
-                  <div>
+              <div className="flex flex-col gap-3 bg-slate-50 p-4 rounded-xl border">
+                {/* 날짜 & 핸디캡 */}
+                <div className="flex gap-4 w-full items-center">
+                  <div className="flex-1 max-w-[150px]">
                     <Label className="text-xs font-bold text-slate-500">날짜</Label>
-                    <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="mt-1 bg-white h-9" />
+                    <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="mt-1 bg-white h-9 text-xs" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <Label className="text-xs font-bold text-slate-500">내 핸디캡 (타수 차감)</Label>
-                    <Input type="number" value={handicapInput} onChange={e => setHandicapInput(Number(e.target.value))} min={0} max={72} className="mt-1 bg-white h-9" />
+                    <div className="flex items-center mt-1 h-9 bg-white border rounded-md overflow-hidden max-w-[160px] shadow-sm">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="h-full px-3 hover:bg-slate-100 border-r rounded-none text-slate-500 font-bold"
+                        onClick={() => setHandicapInput(prev => Math.max(0, Number(prev) - 1))}
+                      >
+                        -
+                      </Button>
+                      <Input
+                        type="number"
+                        value={handicapInput}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setHandicapInput(val === "" ? "" : Number(val));
+                        }}
+                        className="border-none text-center h-full w-full focus-visible:ring-0 font-bold text-slate-800 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        min={0}
+                        max={72}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="h-full px-3 hover:bg-slate-100 border-l rounded-none text-slate-500 font-bold"
+                        onClick={() => setHandicapInput(prev => Math.min(72, Number(prev) + 1))}
+                      >
+                        +
+                      </Button>
+                    </div>
                   </div>
+                </div>
+
+                {/* 골프장 이름 & 코스조합 */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                   <div>
                     <Label className="text-xs font-bold text-slate-500">골프장 이름</Label>
                     <Input value={location} onChange={e => setLocation(e.target.value)} className="mt-1 bg-white h-9" />
@@ -304,11 +373,11 @@ function RecordRoundDialog({
                   <thead>
                     <tr className="bg-slate-100">
                       <th className="p-2 border">Hole</th>
-                      <th className="p-2 border">Par</th>
-                      <th className="p-2 border">거리 (m)</th>
-                      <th className="p-2 border">HCP</th>
                       <th className="p-2 border">Score</th>
                       <th className="p-2 border">Putts</th>
+                      <th className="p-2 border">Par</th>
+                      <th className="p-2 border">거리 (m)</th>
+                      {showHcpColumn && <th className="p-2 border">HCP</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -316,20 +385,22 @@ function RecordRoundDialog({
                       <tr key={i}>
                         <td className="p-2 border font-bold">{h.hole}</td>
                         <td className="p-2 border">
-                          <Input type="number" value={h.par} onChange={e => updateHole(i, "par", Number(e.target.value))} className="w-14 mx-auto text-center" />
-                        </td>
-                        <td className="p-2 border">
-                          <Input type="number" value={h.distance} onChange={e => updateHole(i, "distance", Number(e.target.value))} className="w-20 mx-auto text-center" placeholder="m" />
-                        </td>
-                        <td className="p-2 border">
-                          <Input type="number" value={h.handicap || ""} onChange={e => updateHole(i, "handicap", Number(e.target.value))} className="w-14 mx-auto text-center text-slate-400" placeholder="HCP" />
-                        </td>
-                        <td className="p-2 border">
                           <Input type="number" value={h.score} onChange={e => updateHole(i, "score", Number(e.target.value))} className="w-16 mx-auto text-center font-bold text-teal-600" />
                         </td>
                         <td className="p-2 border">
                           <Input type="number" value={h.putts} onChange={e => updateHole(i, "putts", Number(e.target.value))} className="w-16 mx-auto text-center" />
                         </td>
+                        <td className="p-2 border">
+                          <Input type="number" value={h.par} onChange={e => updateHole(i, "par", Number(e.target.value))} className="w-14 mx-auto text-center" />
+                        </td>
+                        <td className="p-2 border">
+                          <Input type="number" value={h.distance} onChange={e => updateHole(i, "distance", Number(e.target.value))} className="w-20 mx-auto text-center" placeholder="m" />
+                        </td>
+                        {showHcpColumn && (
+                          <td className="p-2 border">
+                            <Input type="number" value={h.handicap || ""} onChange={e => updateHole(i, "handicap", Number(e.target.value))} className="w-14 mx-auto text-center text-slate-400" placeholder="HCP" />
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -357,7 +428,7 @@ function ScoresPage() {
   const [isRecordOpen, setIsRecordOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditHandicapOpen, setIsEditHandicapOpen] = useState(false);
-  const [tempHandicap, setTempHandicap] = useState(0);
+  const [tempHandicap, setTempHandicap] = useState<number | "">(0);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (currentUser) => {
@@ -423,7 +494,8 @@ function ScoresPage() {
   const handleUpdateHandicap = async () => {
     if (!user) return;
     try {
-      await updateUserProfile(user.uid, { handicap: tempHandicap });
+      const finalHcp = tempHandicap === "" ? 0 : Number(tempHandicap);
+      await updateUserProfile(user.uid, { handicap: finalHcp });
       const p = await getUserProfile(user.uid);
       setProfile(p);
       setIsEditHandicapOpen(false);
@@ -441,18 +513,28 @@ function ScoresPage() {
         <h1 className="font-black text-xl text-teal-600">⛳ 골프 스코어</h1>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-slate-700">{profile?.nickname}님</span>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 px-2 text-xs font-bold text-teal-700 border-teal-200 bg-teal-50 hover:bg-teal-100 flex items-center gap-1 cursor-pointer transition-all"
+            <span 
+              className="text-sm font-bold text-slate-700 hover:underline cursor-pointer"
               onClick={() => {
                 if (profile) setTempHandicap(profile.handicap ?? 0);
                 setIsEditHandicapOpen(true);
               }}
             >
-              HCP {profile?.handicap ?? 0}
-            </Button>
+              {profile?.nickname}님
+            </span>
+            {profile?.handicap !== undefined && profile.handicap > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 px-2 text-xs font-bold text-teal-700 border-teal-200 bg-teal-50 hover:bg-teal-100 flex items-center gap-1 cursor-pointer transition-all"
+                onClick={() => {
+                  if (profile) setTempHandicap(profile.handicap ?? 0);
+                  setIsEditHandicapOpen(true);
+                }}
+              >
+                HCP {profile.handicap}
+              </Button>
+            )}
           </div>
           <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut className="w-4 h-4" /></Button>
         </div>
@@ -533,14 +615,35 @@ function ScoresPage() {
           <div className="py-4 space-y-3">
             <div>
               <Label className="text-xs font-bold text-slate-500">나의 기본 핸디캡 (평균 타수 차감)</Label>
-              <Input 
-                type="number" 
-                value={tempHandicap} 
-                onChange={e => setTempHandicap(Number(e.target.value))} 
-                min={0} 
-                max={72} 
-                className="w-full mt-1.5" 
-              />
+              <div className="flex items-center mt-1.5 h-9 bg-white border rounded-md overflow-hidden max-w-[160px] shadow-sm">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-full px-3 hover:bg-slate-100 border-r rounded-none text-slate-500 font-bold"
+                  onClick={() => setTempHandicap(prev => Math.max(0, Number(prev) - 1))}
+                >
+                  -
+                </Button>
+                <Input
+                  type="number"
+                  value={tempHandicap}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setTempHandicap(val === "" ? "" : Number(val));
+                  }}
+                  className="border-none text-center h-full w-full focus-visible:ring-0 font-bold text-slate-800 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  min={0}
+                  max={72}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-full px-3 hover:bg-slate-100 border-l rounded-none text-slate-500 font-bold"
+                  onClick={() => setTempHandicap(prev => Math.min(72, Number(prev) + 1))}
+                >
+                  +
+                </Button>
+              </div>
             </div>
             <p className="text-[11px] text-slate-400 leading-normal">
               💡 여기에 입력된 핸디캡은 나의 기본 실력(평균 핸디캡)으로 프로필에 영구 저장됩니다. 새로운 라운드 점수를 기록할 때 기본 핸디캡 값으로 자동 세팅되지만, 필요에 따라 특정 라운드별로 자유롭게 수정(오버라이드)할 수 있습니다.
