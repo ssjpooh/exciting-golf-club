@@ -82,7 +82,7 @@ function RecordRoundDialog({
   const [memo, setMemo] = useState("");
   const [holes, setHoles] = useState<HoleScore[]>([]);
   const [handicapInput, setHandicapInput] = useState<number | "">(0);
-  const [handicapType, setHandicapType] = useState<"total" | "hole" | "both">("both");
+  const [handicapType, setHandicapType] = useState<"none" | "total" | "hole" | "both">("none");
   const [isNewCourse, setIsNewCourse] = useState(false);
   const [tempHoleCount, setTempHoleCount] = useState<number>(18);
   const [setupStep, setSetupStep] = useState<'choose_holes' | 'scorecard'>('scorecard');
@@ -92,7 +92,7 @@ function RecordRoundDialog({
       const hasHoles = courseInfo?.holes && courseInfo.holes.length > 0;
       setIsNewCourse(!hasHoles);
       setHandicapInput(defaultHandicap);
-      setHandicapType("both");
+      setHandicapType("none");
       setCourseSection(""); // Reset course section for new entry
 
       if (hasHoles) {
@@ -143,9 +143,9 @@ function RecordRoundDialog({
     try {
       const finalCourseId = courseInfo?.id || encodeURIComponent(location);
       const finalName = courseSection ? `${location} (${courseSection})` : location;
-      const hcpInputVal = handicapInput === "" ? 0 : Number(handicapInput);
+      const hcpInputVal = handicapType === "none" ? 0 : (handicapInput === "" ? 0 : Number(handicapInput));
       
-      let finalNetScore = 0;
+      let finalNetScore = totalScore;
       if (handicapType === "total" || handicapType === "both") {
         finalNetScore = totalScore - hcpInputVal;
       } else if (handicapType === "hole") {
@@ -193,6 +193,7 @@ function RecordRoundDialog({
   };
 
   const dialogNetScore = useMemo(() => {
+    if (handicapType === "none") return totalScore;
     const hcpInputVal = handicapInput === "" ? 0 : Number(handicapInput);
     if (handicapType === "total" || handicapType === "both") {
       return totalScore - hcpInputVal;
@@ -213,7 +214,7 @@ function RecordRoundDialog({
             {setupStep === 'scorecard' && (
               <div className="flex items-center gap-4 text-sm font-normal">
                 <span className="bg-teal-700 px-3 py-1 rounded-full text-white font-bold">기본(Gross): {totalScore} 타</span>
-                {handicapInput > 0 && (
+                {handicapType !== "none" && handicapInput > 0 && (
                   <span className="bg-teal-900 px-3 py-1 rounded-full text-white font-bold">넷(Net): {dialogNetScore} 타</span>
                 )}
               </div>
@@ -247,12 +248,13 @@ function RecordRoundDialog({
                       onChange={e => setHandicapType(e.target.value as any)}
                       className="mt-1 flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-xs font-medium shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
+                      <option value="none">핸디캡 없음</option>
                       <option value="total">총 타수에서 차감</option>
                       <option value="hole">홀별 난이도에 따라 차감</option>
                       <option value="both">둘 다 적용</option>
                     </select>
                   </div>
-                  {handicapType === "total" && (
+                  {handicapType !== "none" && (
                     <div className="flex-1 min-w-[140px] max-w-[160px]">
                       <Label className="text-xs font-bold text-slate-500">내 핸디캡 (타수 차감)</Label>
                       <div className="flex items-center mt-1 h-9 bg-white border rounded-md overflow-hidden shadow-sm">
@@ -368,12 +370,13 @@ function RecordRoundDialog({
                       onChange={e => setHandicapType(e.target.value as any)}
                       className="mt-1 flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-xs font-medium shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
+                      <option value="none">핸디캡 없음</option>
                       <option value="total">총 타수에서 차감</option>
                       <option value="hole">홀별 난이도에 따라 차감</option>
                       <option value="both">둘 다 적용</option>
                     </select>
                   </div>
-                  {handicapType === "total" && (
+                  {handicapType !== "none" && (
                     <div className="flex-1 min-w-[140px] max-w-[160px]">
                       <Label className="text-xs font-bold text-slate-500">내 핸디캡 (타수 차감)</Label>
                       <div className="flex items-center mt-1 h-9 bg-white border rounded-md overflow-hidden shadow-sm">
