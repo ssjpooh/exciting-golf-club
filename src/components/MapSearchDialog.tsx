@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { GoogleMap, useLoadScript, Marker, InfoWindow, Autocomplete } from "@react-google-maps/api";
@@ -15,7 +15,7 @@ interface MapSearchDialogProps {
 
 const mapContainerStyle = {
   width: "100%",
-  height: "400px",
+  height: "280px",
   borderRadius: "0.5rem"
 };
 
@@ -35,6 +35,13 @@ export function MapSearchDialog({ open, onOpenChange, onSelectGolfCourse }: MapS
   const [selectedPlace, setSelectedPlace] = useState<google.maps.places.PlaceResult | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+
+  const displayedCourses = useMemo(() => {
+    if (!selectedPlace || !selectedPlace.place_id) return golfCourses;
+    const exists = golfCourses.some(c => c.place_id === selectedPlace.place_id);
+    if (exists) return golfCourses;
+    return [selectedPlace, ...golfCourses];
+  }, [golfCourses, selectedPlace]);
   
   const mapRef = useRef<google.maps.Map | null>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
@@ -149,7 +156,15 @@ export function MapSearchDialog({ open, onOpenChange, onSelectGolfCourse }: MapS
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-lg p-0 overflow-hidden sm:rounded-2xl border-none shadow-2xl">
+      <DialogContent 
+        className="w-[95vw] max-w-lg p-0 overflow-hidden sm:rounded-2xl border-none shadow-2xl"
+        onPointerDownOutside={(e) => {
+          const target = e.target as HTMLElement;
+          if (target && (target.closest(".pac-container") || target.classList.contains("pac-container"))) {
+            e.preventDefault();
+          }
+        }}
+      >
         <DialogHeader className="bg-teal-600 px-5 py-4 text-white">
           <DialogTitle className="text-lg font-bold flex items-center gap-2">
             <Search className="w-5 h-5" />
@@ -241,11 +256,69 @@ export function MapSearchDialog({ open, onOpenChange, onSelectGolfCourse }: MapS
                 )}
               </GoogleMap>
             ) : (
-              <div className="w-full h-[400px] flex items-center justify-center bg-slate-100 text-slate-400">
+              <div className="w-full h-[280px] flex items-center justify-center bg-slate-100 text-slate-400">
                 지도 로딩 중...
               </div>
             )}
           </div>
+
+          {/* Nearby Golf Courses List */}
+          {displayedCourses.length > 0 && (
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-slate-500 flex items-center gap-1">
+                📍 선택 및 주변 골프장 목록 ({displayedCourses.length}개)
+              </Label>
+              <div className="max-h-40 overflow-y-auto border border-slate-200 rounded-xl bg-white divide-y divide-slate-100 shadow-inner">
+                {displayedCourses.map((place, idx) => {
+                  const isSelected = selectedPlace?.place_id === place.place_id;
+                  return (
+                    <div 
+                      key={place.place_id || idx} 
+                      onClick={() => {
+                        setSelectedPlace(place);
+                        if (place.geometry && place.geometry.location) {
+                          setCenter({
+                            lat: place.geometry.location.lat(),
+                            lng: place.geometry.location.lng()
+                          });
+                        }
+                      }}
+                      className={`p-3 text-left transition-colors cursor-pointer flex items-center justify-between gap-3 ${
+                        isSelected 
+                          ? "bg-teal-50 hover:bg-teal-100/80" 
+                          : "hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <h4 className={`text-sm font-bold truncate ${isSelected ? "text-teal-700" : "text-slate-800"}`}>
+                          {place.name}
+                        </h4>
+                        <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                          {place.vicinity || place.formatted_address || "주소 정보 없음"}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          localStorage.setItem("lastSearchedGolfCourse", place.name || "");
+                          onSelectGolfCourse(place.name || "", place.place_id || "");
+                          onOpenChange(false);
+                        }}
+                        className={`h-7 px-3 text-xs font-bold shrink-0 cursor-pointer ${
+                          isSelected 
+                            ? "bg-teal-600 hover:bg-teal-700 text-white" 
+                            : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                        }`}
+                      >
+                        선택
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>

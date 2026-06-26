@@ -142,3 +142,9 @@
     color: var(--color-foreground);
   }
 }
+
+/* Google Maps Autocomplete dropdown fix when used inside Radix Dialog */
+.pac-container {
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+}
