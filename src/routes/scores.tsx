@@ -44,25 +44,6 @@ export const Route = createFileRoute("/scores")({
   component: ScoresPage,
 });
 
-function getHoleHandicapStrokes(
-  h: HoleScore,
-  index: number,
-  totalHandicap: number,
-  totalHoles: number
-): number {
-  if (!totalHandicap) return 0;
-  const baseStrokes = Math.floor(totalHandicap / totalHoles);
-  const remainder = totalHandicap % totalHoles;
-
-  // 홀별 난이도 정보(1 ~ totalHoles)가 입력되어 있는 경우
-  if (h.handicap && h.handicap >= 1 && h.handicap <= totalHoles) {
-    return baseStrokes + (h.handicap <= remainder ? 1 : 0);
-  }
-
-  // 홀별 난이도가 없으면 순서대로 분배
-  return baseStrokes + (index < remainder ? 1 : 0);
-}
-
 function RecordRoundDialog({
   open,
   onOpenChange,
@@ -143,16 +124,15 @@ function RecordRoundDialog({
     try {
       const finalCourseId = courseInfo?.id || encodeURIComponent(location);
       const finalName = courseSection ? `${location} (${courseSection})` : location;
-      const hcpInputVal = handicapType === "none" ? 0 : (handicapInput === "" ? 0 : Number(handicapInput));
+      const hcpInputVal = (handicapType === "total" || handicapType === "both") ? (handicapInput === "" ? 0 : Number(handicapInput)) : 0;
       
       let finalNetScore = totalScore;
-      if (handicapType === "total" || handicapType === "both") {
+      if (handicapType === "total") {
         finalNetScore = totalScore - hcpInputVal;
       } else if (handicapType === "hole") {
-        finalNetScore = holes.reduce((acc, h, i) => {
-          const strokes = getHoleHandicapStrokes(h, i, hcpInputVal, holes.length);
-          return acc + (h.score - strokes);
-        }, 0);
+        finalNetScore = holes.reduce((acc, h) => acc + (h.score - (h.handicap || 0)), 0);
+      } else if (handicapType === "both") {
+        finalNetScore = holes.reduce((acc, h) => acc + (h.score - (h.handicap || 0)), 0) - hcpInputVal;
       }
 
       if (isNewCourse) {
@@ -194,14 +174,14 @@ function RecordRoundDialog({
 
   const dialogNetScore = useMemo(() => {
     if (handicapType === "none") return totalScore;
-    const hcpInputVal = handicapInput === "" ? 0 : Number(handicapInput);
-    if (handicapType === "total" || handicapType === "both") {
+    const hcpInputVal = (handicapType === "total" || handicapType === "both") ? (handicapInput === "" ? 0 : Number(handicapInput)) : 0;
+    
+    if (handicapType === "total") {
       return totalScore - hcpInputVal;
-    } else {
-      return holes.reduce((acc, h, i) => {
-        const strokes = getHoleHandicapStrokes(h, i, hcpInputVal, holes.length);
-        return acc + (h.score - strokes);
-      }, 0);
+    } else if (handicapType === "hole") {
+      return holes.reduce((acc, h) => acc + (h.score - (h.handicap || 0)), 0);
+    } else { // both
+      return holes.reduce((acc, h) => acc + (h.score - (h.handicap || 0)), 0) - hcpInputVal;
     }
   }, [totalScore, handicapInput, handicapType, holes]);
 
@@ -214,7 +194,7 @@ function RecordRoundDialog({
             {setupStep === 'scorecard' && (
               <div className="flex items-center gap-4 text-sm font-normal">
                 <span className="bg-teal-700 px-3 py-1 rounded-full text-white font-bold">기본(Gross): {totalScore} 타</span>
-                {handicapType !== "none" && handicapInput > 0 && (
+                {handicapType !== "none" && (
                   <span className="bg-teal-900 px-3 py-1 rounded-full text-white font-bold">넷(Net): {dialogNetScore} 타</span>
                 )}
               </div>
@@ -250,11 +230,11 @@ function RecordRoundDialog({
                     >
                       <option value="none">핸디캡 없음</option>
                       <option value="total">총 타수에서 차감</option>
-                      <option value="hole">홀별 난이도에 따라 차감</option>
-                      <option value="both">둘 다 적용</option>
+                      <option value="hole">홀별 핸디 직접 입력 (합산)</option>
+                      <option value="both">홀별 핸디 직접 입력 + 총합 차감</option>
                     </select>
                   </div>
-                  {handicapType !== "none" && (
+                  {(handicapType === "total" || handicapType === "both") && (
                     <div className="flex-1 min-w-[140px] max-w-[160px]">
                       <Label className="text-xs font-bold text-slate-500">내 핸디캡 (타수 차감)</Label>
                       <div className="flex items-center mt-1 h-9 bg-white border rounded-md overflow-hidden shadow-sm">
@@ -456,17 +436,12 @@ function RecordRoundDialog({
                       <th className="p-2 border">Putts</th>
                       <th className="p-2 border">Par</th>
                       <th className="p-2 border">거리 (m)</th>
-                      {showHcpColumn && <th className="p-2 border">홀 난이도</th>}
+                      {showHcpColumn && <th className="p-2 border">홀 핸디캡</th>}
                     </tr>
                   </thead>
                   <tbody>
                     {holes.map((h, i) => {
-                      const hcpStrokes = getHoleHandicapStrokes(
-                        h,
-                        i,
-                        handicapInput === "" ? 0 : Number(handicapInput),
-                        holes.length
-                      );
+                      const hcpStrokes = h.handicap || 0;
                       const showNetDisplay = showHcpColumn && hcpStrokes > 0 && h.score > 0;
 
                       return (
@@ -505,7 +480,7 @@ function RecordRoundDialog({
                           </td>
                           {showHcpColumn && (
                             <td className="p-2 border">
-                              <Input type="number" value={h.handicap || ""} onChange={e => updateHole(i, "handicap", Number(e.target.value))} className="w-14 mx-auto text-center text-slate-400" placeholder="난이도" />
+                              <Input type="number" value={h.handicap || ""} onChange={e => updateHole(i, "handicap", Number(e.target.value))} className="w-14 mx-auto text-center text-slate-400" placeholder="핸디" />
                             </td>
                           )}
                         </tr>
@@ -682,12 +657,13 @@ function ScoresPage() {
                   <span className="text-sm font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
                     그로스(기본): {game.total}타
                   </span>
-                  {game.handicap !== undefined && game.handicap > 0 && (
+                  {((game.handicap !== undefined && game.handicap > 0) || (game.handicapType === "hole" && game.holes?.some(h => (h.handicap || 0) > 0))) && game.handicapType !== "none" && (
                     <span className="text-sm font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
                       네트(적용): {game.netScore ?? (game.total - game.handicap)}타 ({
-                        game.handicapType === "total" ? "총합 차감" :
-                        game.handicapType === "hole" ? "홀별 차감" : "둘 다 적용"
-                      } / HCP {game.handicap})
+                        game.handicapType === "total" ? `총합 차감 / HCP ${game.handicap}` :
+                        game.handicapType === "hole" ? `홀별 차감 / HCP ${game.holes?.reduce((acc, h) => acc + (h.handicap || 0), 0) || 0}` :
+                        `둘 다 적용 / HCP ${game.handicap}(총합)+${game.holes?.reduce((acc, h) => acc + (h.handicap || 0), 0) || 0}(홀별)`
+                      })
                     </span>
                   )}
                 </div>
