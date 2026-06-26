@@ -1,4 +1,4 @@
-const CACHE_NAME = "bowling-club-v1";
+const CACHE_NAME = "exciting-golf-club-v2";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
