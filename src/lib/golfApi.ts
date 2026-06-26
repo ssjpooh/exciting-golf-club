@@ -49,7 +49,7 @@ export async function searchGolfClubs(keyword: string) {
  * 2. 특정 골프장의 코스 및 홀 상세 정보 가져오기 API
  * - API 키가 없으면 18홀 더미 데이터를 생성하여 반환합니다.
  */
-export async function getCourseDetails(courseId: string) {
+export async function getCourseDetails(courseId: string, courseName?: string) {
   // 1순위: DB에 이미 등록되어 있는지 확인
   try {
     const dbCourse = await getGolfCourseFromDb(courseId);
@@ -65,18 +65,20 @@ export async function getCourseDetails(courseId: string) {
     console.error("[Golf API] DB 조회 중 오류 발생 (API Fallback 시도):", dbError);
   }
 
+  const searchName = courseName || decodeURIComponent(courseId);
+
   // 2순위: API를 사용한 조회 (Fallback)
-  if (!API_KEY) {
-    console.warn("API 키가 설정되지 않았습니다. 빈 코스 템플릿을 반환합니다.");
+  // 구글 플레이스 ID(보통 ChIJ... 형태)이고 courseName이 없으면 검색할 수 없으므로 바로 패스
+  if (!API_KEY || (courseId.startsWith("ChIJ") && !courseName)) {
+    console.warn("API 키가 없거나 플레이스 ID만 있어 검색할 수 없습니다. 빈 코스 템플릿을 반환합니다.");
     return {
       id: courseId,
-      name: decodeURIComponent(courseId),
+      name: searchName,
       holes: []
     };
   }
 
   try {
-    const searchName = decodeURIComponent(courseId);
     const response = await fetch(`${API_BASE_URL}/search?name=${encodeURIComponent(searchName)}`, {
       headers: {
         "Content-Type": "application/json",
@@ -115,7 +117,7 @@ export async function getCourseDetails(courseId: string) {
       }
 
       return {
-        id: courseData.name,
+        id: courseId, // 맵에서 받은 고유 플레이스 ID 유지
         name: courseData.name,
         holes: holes
       };
@@ -123,7 +125,7 @@ export async function getCourseDetails(courseId: string) {
       console.warn(`API 응답 오류 (${response.status}). 빈 코스 템플릿을 반환합니다.`);
       return {
         id: courseId,
-        name: decodeURIComponent(courseId),
+        name: searchName,
         holes: []
       };
     }
@@ -131,7 +133,7 @@ export async function getCourseDetails(courseId: string) {
     console.error("API 연결 실패:", error);
     return {
       id: courseId,
-      name: decodeURIComponent(courseId),
+      name: searchName,
       holes: []
     };
   }

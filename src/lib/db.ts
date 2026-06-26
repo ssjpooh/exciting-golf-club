@@ -77,6 +77,7 @@ export type UserProfile = {
   role: UserRole;
   average: number;
   highScore: number;
+  handicap?: number;
   createdAt: unknown;
   lastLoginAt: unknown;
 };
@@ -391,6 +392,12 @@ export async function saveGolfCourseToDb(course: GolfCourse): Promise<void> {
     ...course,
     createdAt: serverTimestamp(),
   });
+}
+
+// 유저 프로필 필드 직접 수정 (예: 핸디캡)
+export async function updateUserProfile(userId: string, data: Partial<UserProfile>): Promise<void> {
+  const userRef = doc(db, "users", userId);
+  await updateDoc(userRef, data);
 }
 
 

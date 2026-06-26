@@ -10,7 +10,7 @@ const libraries: ("places")[] = ["places"];
 interface MapSearchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelectGolfCourse: (name: string) => void;
+  onSelectGolfCourse: (name: string, placeId: string) => void;
 }
 
 const mapContainerStyle = {
@@ -138,7 +138,7 @@ export function MapSearchDialog({ open, onOpenChange, onSelectGolfCourse }: MapS
   const handleSelect = () => {
     if (selectedPlace?.name) {
       localStorage.setItem("lastSearchedGolfCourse", selectedPlace.name);
-      onSelectGolfCourse(selectedPlace.name);
+      onSelectGolfCourse(selectedPlace.name, selectedPlace.place_id || "");
       onOpenChange(false);
     }
   };

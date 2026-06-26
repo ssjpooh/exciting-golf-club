@@ -11,6 +11,7 @@ import {
   UserProfile,
   deleteSavedScore,
   saveGolfCourseToDb,
+  updateUserProfile,
 } from "@/lib/db";
 import { getCourseDetails } from "@/lib/golfApi";
 import { Card } from "@/components/ui/card";
@@ -29,6 +30,7 @@ import {
 type ScoresSearch = {
   viewUid?: string;
   courseId?: string;
+  courseName?: string;
 };
 
 export const Route = createFileRoute("/scores")({
@@ -36,6 +38,7 @@ export const Route = createFileRoute("/scores")({
     return {
       viewUid: search.viewUid as string | undefined,
       courseId: search.courseId as string | undefined,
+      courseName: search.courseName as string | undefined,
     };
   },
   component: ScoresPage,
@@ -46,29 +49,36 @@ function RecordRoundDialog({
   onOpenChange,
   courseInfo,
   onSave,
+  defaultHandicap = 0,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   courseInfo?: any;
   onSave: (score: any) => void;
+  defaultHandicap?: number;
 }) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [location, setLocation] = useState(courseInfo?.name || "");
+  const [courseSection, setCourseSection] = useState("");
   const [memo, setMemo] = useState("");
   const [holes, setHoles] = useState<HoleScore[]>([]);
   const [handicapInput, setHandicapInput] = useState<number>(0);
   const [isNewCourse, setIsNewCourse] = useState(false);
   const [tempHoleCount, setTempHoleCount] = useState<number>(18);
+  const [setupStep, setSetupStep] = useState<'choose_holes' | 'scorecard'>('scorecard');
 
   useEffect(() => {
     if (open) {
       const hasHoles = courseInfo?.holes && courseInfo.holes.length > 0;
       setIsNewCourse(!hasHoles);
-      setHandicapInput(0);
+      setHandicapInput(defaultHandicap);
+      setCourseSection(""); // Reset course section for new entry
 
       if (hasHoles) {
         setHoles(courseInfo.holes.map((h: any) => ({ ...h, score: h.par, putts: 2 })));
+        setSetupStep('scorecard');
       } else {
+        setSetupStep('choose_holes'); // New course: ask how many holes first
         const isNineHoles = courseInfo?.name?.includes("태광") || courseInfo?.name?.includes("9홀");
         const defaultLength = isNineHoles ? 9 : 18;
         setTempHoleCount(defaultLength);
@@ -84,7 +94,7 @@ function RecordRoundDialog({
       }
       setLocation(courseInfo?.name || "");
     }
-  }, [open, courseInfo]);
+  }, [open, courseInfo, defaultHandicap]);
 
   const totalScore = useMemo(() => holes.reduce((acc, h) => acc + (h.score || 0), 0), [holes]);
   const totalPar = useMemo(() => holes.reduce((acc, h) => acc + (h.par || 0), 0), [holes]);
@@ -110,10 +120,12 @@ function RecordRoundDialog({
   const save = async () => {
     try {
       const finalCourseId = courseInfo?.id || encodeURIComponent(location);
+      const finalName = courseSection ? `${location} (${courseSection})` : location;
+      
       if (isNewCourse) {
         const newCourseData = {
           id: finalCourseId,
-          name: location,
+          name: finalName,
           holeCount: tempHoleCount,
           totalPar: holes.reduce((acc, h) => acc + (h.par || 0), 0),
           holes: holes.map(h => ({
@@ -128,7 +140,7 @@ function RecordRoundDialog({
 
       onSave({
         date,
-        location,
+        location: finalName,
         memo,
         holes,
         total: totalScore,
@@ -149,104 +161,194 @@ function RecordRoundDialog({
         <DialogHeader className="bg-teal-600 px-5 py-4 text-white shrink-0">
           <DialogTitle className="text-lg font-bold flex items-center justify-between">
             <span>라운드 기록하기</span>
-            <div className="flex items-center gap-4 text-sm font-normal">
-              <span className="bg-teal-700 px-3 py-1 rounded-full text-white font-bold">기본(Gross): {totalScore} 타</span>
-              {handicapInput > 0 && (
-                <span className="bg-teal-900 px-3 py-1 rounded-full text-white font-bold">넷(Net): {totalScore - handicapInput} 타</span>
-              )}
-            </div>
+            {setupStep === 'scorecard' && (
+              <div className="flex items-center gap-4 text-sm font-normal">
+                <span className="bg-teal-700 px-3 py-1 rounded-full text-white font-bold">기본(Gross): {totalScore} 타</span>
+                {handicapInput > 0 && (
+                  <span className="bg-teal-900 px-3 py-1 rounded-full text-white font-bold">넷(Net): {totalScore - handicapInput} 타</span>
+                )}
+              </div>
+            )}
           </DialogTitle>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <Label>날짜</Label>
-              <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
-            </div>
-            <div>
-              <Label>골프장 이름</Label>
-              <Input value={location} onChange={e => setLocation(e.target.value)} />
-            </div>
-            <div>
-              <Label>개인 핸디캡 (타수 차감)</Label>
-              <Input type="number" value={handicapInput} onChange={e => setHandicapInput(Number(e.target.value))} min={0} max={72} />
-            </div>
-          </div>
 
-          {isNewCourse && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
-              <p className="text-xs font-bold text-amber-800">
-                💡 등록되지 않은 골프장입니다. 코스의 홀 수와 정보를 입력해주시면 다른 골퍼들과 공유됩니다.
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant={tempHoleCount === 9 ? "default" : "outline"}
-                  onClick={() => handleHoleCountChange(9)}
-                  className={`flex-1 h-9 ${tempHoleCount === 9 ? "bg-teal-600 hover:bg-teal-700 text-white font-bold" : ""}`}
-                >
-                  9홀 코스
-                </Button>
-                <Button
-                  type="button"
-                  variant={tempHoleCount === 18 ? "default" : "outline"}
-                  onClick={() => handleHoleCountChange(18)}
-                  className={`flex-1 h-9 ${tempHoleCount === 18 ? "bg-teal-600 hover:bg-teal-700 text-white font-bold" : ""}`}
-                >
-                  18홀 코스
-                </Button>
+        {setupStep === 'choose_holes' ? (
+          <div className="flex-1 p-6 flex flex-col justify-between bg-slate-50 overflow-y-auto">
+            <div className="space-y-6">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2 shadow-sm">
+                <h3 className="text-sm font-bold text-amber-800 flex items-center gap-1.5">
+                  ⛳ 신규 골프장 설정
+                </h3>
+                <p className="text-xs text-amber-700 leading-relaxed">
+                  등록되어 있지 않은 새로운 골프장입니다. 원활한 스코어 카드 기록을 위해 골프장의 홀 수와 정보를 기입해 주세요. 등록된 정보는 다른 골퍼들과 공유됩니다.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white p-4 rounded-xl border shadow-sm">
+                <div>
+                  <Label className="text-xs font-bold text-slate-500">날짜</Label>
+                  <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="mt-1" />
+                </div>
+                <div>
+                  <Label className="text-xs font-bold text-slate-500">내 핸디캡 (타수 차감)</Label>
+                  <Input type="number" value={handicapInput} onChange={e => setHandicapInput(Number(e.target.value))} min={0} max={72} className="mt-1" />
+                </div>
+                <div>
+                  <Label className="text-xs font-bold text-slate-500">골프장 이름</Label>
+                  <Input value={location} onChange={e => setLocation(e.target.value)} className="mt-1" />
+                </div>
+                <div>
+                  <Label className="text-xs font-bold text-slate-500">코스/코스조합 이름 (선택)</Label>
+                  <Input 
+                    value={courseSection} 
+                    onChange={e => setCourseSection(e.target.value)} 
+                    placeholder="예: 동/서 코스, 아웃코스" 
+                    className="mt-1" 
+                  />
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-xl border shadow-sm space-y-4">
+                <Label className="text-sm font-bold text-slate-700 block text-center">
+                  골프장의 전체 홀 수를 선택해 주세요
+                </Label>
+                <div className="flex gap-4">
+                  <Button
+                    type="button"
+                    variant={tempHoleCount === 9 ? "default" : "outline"}
+                    onClick={() => handleHoleCountChange(9)}
+                    className={`flex-1 h-20 text-lg font-bold flex flex-col gap-1 transition-all ${
+                      tempHoleCount === 9 
+                        ? "bg-teal-600 hover:bg-teal-700 text-white shadow-md shadow-teal-100 scale-[1.02]" 
+                        : "hover:bg-slate-50 border-slate-200"
+                    }`}
+                  >
+                    <span>9홀 코스</span>
+                    <span className="text-xs font-normal opacity-85">기본 36타 설정</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={tempHoleCount === 18 ? "default" : "outline"}
+                    onClick={() => handleHoleCountChange(18)}
+                    className={`flex-1 h-20 text-lg font-bold flex flex-col gap-1 transition-all ${
+                      tempHoleCount === 18 
+                        ? "bg-teal-600 hover:bg-teal-700 text-white shadow-md shadow-teal-100 scale-[1.02]" 
+                        : "hover:bg-slate-50 border-slate-200"
+                    }`}
+                  >
+                    <span>18홀 코스</span>
+                    <span className="text-xs font-normal opacity-85">기본 72타 설정</span>
+                  </Button>
+                </div>
               </div>
             </div>
-          )}
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-center border-collapse">
-              <thead>
-                <tr className="bg-slate-100">
-                  <th className="p-2 border">Hole</th>
-                  <th className="p-2 border">Par</th>
-                  <th className="p-2 border">거리 (m)</th>
-                  <th className="p-2 border">HCP</th>
-                  <th className="p-2 border">Score</th>
-                  <th className="p-2 border">Putts</th>
-                </tr>
-              </thead>
-              <tbody>
-                {holes.map((h, i) => (
-                  <tr key={i}>
-                    <td className="p-2 border font-bold">{h.hole}</td>
-                    <td className="p-2 border">
-                      <Input type="number" value={h.par} onChange={e => updateHole(i, "par", Number(e.target.value))} className="w-14 mx-auto text-center" />
-                    </td>
-                    <td className="p-2 border">
-                      <Input type="number" value={h.distance} onChange={e => updateHole(i, "distance", Number(e.target.value))} className="w-20 mx-auto text-center" placeholder="m" />
-                    </td>
-                    <td className="p-2 border">
-                      <Input type="number" value={h.handicap || ""} onChange={e => updateHole(i, "handicap", Number(e.target.value))} className="w-14 mx-auto text-center text-slate-400" placeholder="HCP" />
-                    </td>
-                    <td className="p-2 border">
-                      <Input type="number" value={h.score} onChange={e => updateHole(i, "score", Number(e.target.value))} className="w-16 mx-auto text-center font-bold text-teal-600" />
-                    </td>
-                    <td className="p-2 border">
-                      <Input type="number" value={h.putts} onChange={e => updateHole(i, "putts", Number(e.target.value))} className="w-16 mx-auto text-center" />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="flex justify-end gap-2 pt-4 border-t mt-6">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>취소</Button>
+              <Button 
+                onClick={() => setSetupStep('scorecard')} 
+                className="bg-teal-600 hover:bg-teal-700 text-white font-bold px-6"
+              >
+                코스 생성 및 스코어 입력 시작
+              </Button>
+            </div>
           </div>
-        </div>
-        <div className="p-4 bg-slate-50 border-t shrink-0 flex justify-end gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>취소</Button>
-          <Button onClick={save} className="bg-teal-600 hover:bg-teal-700 text-white font-bold">저장하기</Button>
-        </div>
+        ) : (
+          <>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="flex flex-col gap-4 bg-slate-50 p-4 rounded-xl border">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 w-full">
+                  <div>
+                    <Label className="text-xs font-bold text-slate-500">날짜</Label>
+                    <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="mt-1 bg-white h-9" />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-bold text-slate-500">내 핸디캡 (타수 차감)</Label>
+                    <Input type="number" value={handicapInput} onChange={e => setHandicapInput(Number(e.target.value))} min={0} max={72} className="mt-1 bg-white h-9" />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-bold text-slate-500">골프장 이름</Label>
+                    <Input value={location} onChange={e => setLocation(e.target.value)} className="mt-1 bg-white h-9" />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-bold text-slate-500">코스/코스조합 이름 (선택)</Label>
+                    <Input 
+                      value={courseSection} 
+                      onChange={e => setCourseSection(e.target.value)} 
+                      placeholder="예: 동/서 코스, 아웃코스" 
+                      className="mt-1 bg-white h-9"
+                      disabled={!isNewCourse}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {isNewCourse && (
+                <div className="flex justify-between items-center text-xs bg-amber-50 border border-amber-200 p-2.5 rounded-lg text-amber-800 font-medium">
+                  <span>
+                    💡 신규 설정 중: <strong>{tempHoleCount}홀 코스</strong>입니다. 각 홀의 파(Par)와 거리(m)를 자유롭게 편집하고 실제 타수를 입력하세요.
+                  </span>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    onClick={() => setSetupStep('choose_holes')} 
+                    className="h-6 text-[10px] text-amber-900 hover:bg-amber-100 font-bold border border-amber-300"
+                  >
+                    홀 수 재설정
+                  </Button>
+                </div>
+              )}
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-center border-collapse">
+                  <thead>
+                    <tr className="bg-slate-100">
+                      <th className="p-2 border">Hole</th>
+                      <th className="p-2 border">Par</th>
+                      <th className="p-2 border">거리 (m)</th>
+                      <th className="p-2 border">HCP</th>
+                      <th className="p-2 border">Score</th>
+                      <th className="p-2 border">Putts</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {holes.map((h, i) => (
+                      <tr key={i}>
+                        <td className="p-2 border font-bold">{h.hole}</td>
+                        <td className="p-2 border">
+                          <Input type="number" value={h.par} onChange={e => updateHole(i, "par", Number(e.target.value))} className="w-14 mx-auto text-center" />
+                        </td>
+                        <td className="p-2 border">
+                          <Input type="number" value={h.distance} onChange={e => updateHole(i, "distance", Number(e.target.value))} className="w-20 mx-auto text-center" placeholder="m" />
+                        </td>
+                        <td className="p-2 border">
+                          <Input type="number" value={h.handicap || ""} onChange={e => updateHole(i, "handicap", Number(e.target.value))} className="w-14 mx-auto text-center text-slate-400" placeholder="HCP" />
+                        </td>
+                        <td className="p-2 border">
+                          <Input type="number" value={h.score} onChange={e => updateHole(i, "score", Number(e.target.value))} className="w-16 mx-auto text-center font-bold text-teal-600" />
+                        </td>
+                        <td className="p-2 border">
+                          <Input type="number" value={h.putts} onChange={e => updateHole(i, "putts", Number(e.target.value))} className="w-16 mx-auto text-center" />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div className="p-4 bg-slate-50 border-t shrink-0 flex justify-end gap-2">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>취소</Button>
+              <Button onClick={save} className="bg-teal-600 hover:bg-teal-700 text-white font-bold">저장하기</Button>
+            </div>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
 }
 
 function ScoresPage() {
-  const { courseId } = Route.useSearch();
+  const { courseId, courseName } = Route.useSearch();
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -254,6 +356,8 @@ function ScoresPage() {
   const [games, setGames] = useState<Score[]>([]);
   const [isRecordOpen, setIsRecordOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isEditHandicapOpen, setIsEditHandicapOpen] = useState(false);
+  const [tempHandicap, setTempHandicap] = useState(0);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (currentUser) => {
@@ -264,6 +368,9 @@ function ScoresPage() {
       setUser(currentUser);
       const p = await getUserProfile(currentUser.uid);
       setProfile(p);
+      if (p) {
+        setTempHandicap(p.handicap ?? 0);
+      }
       const userScores = await getUserScores(currentUser.uid);
       setGames(userScores);
       setIsLoading(false);
@@ -275,7 +382,7 @@ function ScoresPage() {
     if (courseId && !isLoading) {
       const previousGame = games.find(g => g.courseId === courseId);
       
-      getCourseDetails(courseId).then(info => {
+      getCourseDetails(courseId, courseName).then(info => {
         if (previousGame && previousGame.holes) {
           // 이전 기록이 있다면 그 기록의 파(Par)와 거리 정보를 재사용합니다.
           info.holes = info.holes.map((h: any, i: number) => ({
@@ -287,7 +394,7 @@ function ScoresPage() {
         setCourseInfo(info);
       }).catch(console.error);
     }
-  }, [courseId, isLoading, games]);
+  }, [courseId, courseName, isLoading, games]);
 
   const displayGames = useMemo(() => {
     if (courseId) {
@@ -313,6 +420,19 @@ function ScoresPage() {
     }
   };
 
+  const handleUpdateHandicap = async () => {
+    if (!user) return;
+    try {
+      await updateUserProfile(user.uid, { handicap: tempHandicap });
+      const p = await getUserProfile(user.uid);
+      setProfile(p);
+      setIsEditHandicapOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert("핸디캡 수정에 실패했습니다.");
+    }
+  };
+
   if (isLoading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
 
   return (
@@ -320,7 +440,20 @@ function ScoresPage() {
       <header className="bg-white border-b sticky top-0 z-10 px-4 py-3 flex justify-between items-center">
         <h1 className="font-black text-xl text-teal-600">⛳ 골프 스코어</h1>
         <div className="flex items-center gap-4">
-          <span className="text-sm font-bold">{profile?.nickname}님</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold text-slate-700">{profile?.nickname}님</span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 px-2 text-xs font-bold text-teal-700 border-teal-200 bg-teal-50 hover:bg-teal-100 flex items-center gap-1 cursor-pointer transition-all"
+              onClick={() => {
+                if (profile) setTempHandicap(profile.handicap ?? 0);
+                setIsEditHandicapOpen(true);
+              }}
+            >
+              HCP {profile?.handicap ?? 0}
+            </Button>
+          </div>
           <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut className="w-4 h-4" /></Button>
         </div>
       </header>
@@ -389,7 +522,36 @@ function ScoresPage() {
         onOpenChange={setIsRecordOpen} 
         courseInfo={courseInfo} 
         onSave={handleSaveScore} 
+        defaultHandicap={profile?.handicap !== undefined ? profile.handicap : (games.length > 0 ? (games[0].handicap ?? 0) : 0)}
       />
+
+      <Dialog open={isEditHandicapOpen} onOpenChange={setIsEditHandicapOpen}>
+        <DialogContent className="max-w-sm p-6 bg-white rounded-xl shadow-lg border border-slate-100">
+          <DialogHeader className="pb-2 border-b">
+            <DialogTitle className="text-base font-bold text-slate-800">기본 핸디캡 수정</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-3">
+            <div>
+              <Label className="text-xs font-bold text-slate-500">나의 기본 핸디캡 (평균 타수 차감)</Label>
+              <Input 
+                type="number" 
+                value={tempHandicap} 
+                onChange={e => setTempHandicap(Number(e.target.value))} 
+                min={0} 
+                max={72} 
+                className="w-full mt-1.5" 
+              />
+            </div>
+            <p className="text-[11px] text-slate-400 leading-normal">
+              💡 여기에 입력된 핸디캡은 나의 기본 실력(평균 핸디캡)으로 프로필에 영구 저장됩니다. 새로운 라운드 점수를 기록할 때 기본 핸디캡 값으로 자동 세팅되지만, 필요에 따라 특정 라운드별로 자유롭게 수정(오버라이드)할 수 있습니다.
+            </p>
+          </div>
+          <div className="flex justify-end gap-2 pt-2 border-t">
+            <Button variant="outline" size="sm" onClick={() => setIsEditHandicapOpen(false)}>취소</Button>
+            <Button size="sm" onClick={handleUpdateHandicap} className="bg-teal-600 hover:bg-teal-700 text-white font-bold">저장하기</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
