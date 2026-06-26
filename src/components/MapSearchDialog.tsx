@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { GoogleMap, useLoadScript, Marker, InfoWindow, Autocomplete } from "@react-google-maps/api";
 import { MapPin, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const libraries: ("places")[] = ["places"];
 
