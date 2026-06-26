@@ -240,38 +240,6 @@ function RecordRoundDialog({
                     <Label className="text-xs font-bold text-slate-500">날짜</Label>
                     <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="mt-1 bg-white h-9 text-xs" />
                   </div>
-                  <div className="flex-1 min-w-[140px] max-w-[160px]">
-                    <Label className="text-xs font-bold text-slate-500">내 핸디캡 (타수 차감)</Label>
-                    <div className="flex items-center mt-1 h-9 bg-white border rounded-md overflow-hidden shadow-sm">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className="h-full px-3 hover:bg-slate-100 border-r rounded-none text-slate-500 font-bold"
-                        onClick={() => setHandicapInput(prev => Math.max(0, Number(prev) - 1))}
-                      >
-                        -
-                      </Button>
-                      <Input
-                        type="number"
-                        value={handicapInput}
-                        onChange={e => {
-                          const val = e.target.value;
-                          setHandicapInput(val === "" ? "" : Number(val));
-                        }}
-                        className="border-none text-center h-full w-full focus-visible:ring-0 font-bold text-slate-800 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        min={0}
-                        max={72}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className="h-full px-3 hover:bg-slate-100 border-l rounded-none text-slate-500 font-bold"
-                        onClick={() => setHandicapInput(prev => Math.min(72, Number(prev) + 1))}
-                      >
-                        +
-                      </Button>
-                    </div>
-                  </div>
                   <div className="flex-1 min-w-[180px]">
                     <Label className="text-xs font-bold text-slate-500">핸디캡 적용 방식</Label>
                     <select
@@ -284,6 +252,40 @@ function RecordRoundDialog({
                       <option value="both">둘 다 적용</option>
                     </select>
                   </div>
+                  {handicapType === "total" && (
+                    <div className="flex-1 min-w-[140px] max-w-[160px]">
+                      <Label className="text-xs font-bold text-slate-500">내 핸디캡 (타수 차감)</Label>
+                      <div className="flex items-center mt-1 h-9 bg-white border rounded-md overflow-hidden shadow-sm">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="h-full px-3 hover:bg-slate-100 border-r rounded-none text-slate-500 font-bold"
+                          onClick={() => setHandicapInput(prev => Math.max(0, Number(prev) - 1))}
+                        >
+                          -
+                        </Button>
+                        <Input
+                          type="number"
+                          value={handicapInput}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setHandicapInput(val === "" ? "" : Number(val));
+                          }}
+                          className="border-none text-center h-full w-full focus-visible:ring-0 font-bold text-slate-800 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          min={0}
+                          max={72}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="h-full px-3 hover:bg-slate-100 border-l rounded-none text-slate-500 font-bold"
+                          onClick={() => setHandicapInput(prev => Math.min(72, Number(prev) + 1))}
+                        >
+                          +
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* 골프장 이름 & 코스조합 */}
@@ -359,38 +361,6 @@ function RecordRoundDialog({
                     <Label className="text-xs font-bold text-slate-500">날짜</Label>
                     <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="mt-1 bg-white h-9 text-xs" />
                   </div>
-                  <div className="flex-1 min-w-[140px] max-w-[160px]">
-                    <Label className="text-xs font-bold text-slate-500">내 핸디캡 (타수 차감)</Label>
-                    <div className="flex items-center mt-1 h-9 bg-white border rounded-md overflow-hidden shadow-sm">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className="h-full px-3 hover:bg-slate-100 border-r rounded-none text-slate-500 font-bold"
-                        onClick={() => setHandicapInput(prev => Math.max(0, Number(prev) - 1))}
-                      >
-                        -
-                      </Button>
-                      <Input
-                        type="number"
-                        value={handicapInput}
-                        onChange={e => {
-                          const val = e.target.value;
-                          setHandicapInput(val === "" ? "" : Number(val));
-                        }}
-                        className="border-none text-center h-full w-full focus-visible:ring-0 font-bold text-slate-800 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        min={0}
-                        max={72}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className="h-full px-3 hover:bg-slate-100 border-l rounded-none text-slate-500 font-bold"
-                        onClick={() => setHandicapInput(prev => Math.min(72, Number(prev) + 1))}
-                      >
-                        +
-                      </Button>
-                    </div>
-                  </div>
                   <div className="flex-1 min-w-[180px]">
                     <Label className="text-xs font-bold text-slate-500">핸디캡 적용 방식</Label>
                     <select
@@ -403,6 +373,40 @@ function RecordRoundDialog({
                       <option value="both">둘 다 적용</option>
                     </select>
                   </div>
+                  {handicapType === "total" && (
+                    <div className="flex-1 min-w-[140px] max-w-[160px]">
+                      <Label className="text-xs font-bold text-slate-500">내 핸디캡 (타수 차감)</Label>
+                      <div className="flex items-center mt-1 h-9 bg-white border rounded-md overflow-hidden shadow-sm">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="h-full px-3 hover:bg-slate-100 border-r rounded-none text-slate-500 font-bold"
+                          onClick={() => setHandicapInput(prev => Math.max(0, Number(prev) - 1))}
+                        >
+                          -
+                        </Button>
+                        <Input
+                          type="number"
+                          value={handicapInput}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setHandicapInput(val === "" ? "" : Number(val));
+                          }}
+                          className="border-none text-center h-full w-full focus-visible:ring-0 font-bold text-slate-800 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          min={0}
+                          max={72}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="h-full px-3 hover:bg-slate-100 border-l rounded-none text-slate-500 font-bold"
+                          onClick={() => setHandicapInput(prev => Math.min(72, Number(prev) + 1))}
+                        >
+                          +
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* 골프장 이름 & 코스조합 */}
