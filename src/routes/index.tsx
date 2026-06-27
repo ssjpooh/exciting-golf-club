@@ -204,13 +204,13 @@ function LoginPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-3">
-            {/* 
             <SocialButton
               provider="kakao"
               label="카카오톡으로 시작하기"
               onClick={() => handleSocialLogin("kakao")}
               isLoading={isLoading}
             />
+            {/* 
             <SocialButton
               provider="naver"
               label="네이버로 시작하기"
