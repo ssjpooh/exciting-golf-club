@@ -1,11 +1,22 @@
 import { createServerFn } from "@tanstack/react-start";
 import * as jose from "jose";
 
+import { getEvent } from "vinxi/http";
+
 /**
  * 환경 변수를 찾는 헬퍼 함수 (Cloudflare Workers 호환성 확보)
  */
 function getEnvVar(name: string): string | undefined {
   let val: string | undefined = undefined;
+
+  // 1. Cloudflare Workers runtime env (via Vinxi/H3 event context)
+  try {
+    const event = getEvent();
+    val = event?.context?.cloudflare?.env?.[name] || event?.context?.cloudflare?.env?.["VITE_" + name];
+    if (val) return val;
+  } catch (e) {
+    // Not in request context or not supported
+  }
 
   if (name === "VITE_KAKAO_REST_API_KEY") val = import.meta.env.VITE_KAKAO_REST_API_KEY;
   else if (name === "VITE_NAVER_CLIENT_ID") val = import.meta.env.VITE_NAVER_CLIENT_ID;
@@ -14,7 +25,7 @@ function getEnvVar(name: string): string | undefined {
 
   if (val) return val;
 
-  val = process.env[name] || process.env["VITE_" + name] || (globalThis as any)[name] || (globalThis as any)["VITE_" + name] || (import.meta as any).env?.[name] || (import.meta as any).env?.["VITE_" + name];
+  val = process.env?.[name] || process.env?.["VITE_" + name] || (globalThis as any)[name] || (globalThis as any)["VITE_" + name] || (import.meta as any).env?.[name] || (import.meta as any).env?.["VITE_" + name];
   
   return val;
 }
