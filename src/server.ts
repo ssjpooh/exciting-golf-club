@@ -71,14 +71,22 @@ export default {
     try {
       // Polyfill Cloudflare bindings into process.env so server actions can easily read them
       if (!globalThis.process) {
-        (globalThis as any).process = { env: {} };
+        (globalThis as any).process = {};
       }
-      if (!globalThis.process.env) {
-        (globalThis as any).process.env = {};
-      }
-      if (env && typeof env === "object") {
-        Object.assign(globalThis.process.env, env);
-      }
+      // Use a Proxy to access non-enumerable Cloudflare bindings without errors on set()
+      const fallbackEnv: Record<string, any> = {};
+      (globalThis as any).process.env = new Proxy(fallbackEnv, {
+        get(_, prop) {
+          if (env && typeof prop === "string" && env[prop] !== undefined) {
+            return env[prop];
+          }
+          return fallbackEnv[prop as string];
+        },
+        set(_, prop, value) {
+          fallbackEnv[prop as string] = value;
+          return true;
+        }
+      });
 
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
