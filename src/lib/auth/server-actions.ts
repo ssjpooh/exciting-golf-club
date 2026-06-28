@@ -53,7 +53,7 @@ async function generateCustomToken(uid: string) {
   
   if (!serviceAccountVar) {
     console.error("FIREBASE_SERVICE_ACCOUNT is missing");
-    return { success: false, error: "SERVER_ERROR: FIREBASE_SERVICE_ACCOUNT environment variable is missing." };
+    throw new Error("SERVER_ERROR: FIREBASE_SERVICE_ACCOUNT environment variable is missing. It is still not being read from env!");
   }
 
   let serviceAccount;
