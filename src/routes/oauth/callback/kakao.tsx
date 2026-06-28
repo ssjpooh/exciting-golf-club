@@ -35,9 +35,9 @@ function KakaoCallback() {
         // Redirect to protected page
         navigate({ to: "/scores", replace: true });
 
-      } catch (error) {
+      } catch (error: any) {
         console.error("Kakao callback error:", error);
-        alert("카카오 로그인에 실패했습니다.");
+        alert(`카카오 로그인에 실패했습니다.\n사유: ${error?.message || error}`);
         navigate({ to: "/", replace: true });
       }
     };
