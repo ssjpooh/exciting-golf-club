@@ -18,12 +18,12 @@ import { db } from "./firebase";
 
 export type HoleScore = {
   hole: number;
-  par: number;
-  score: number;
+  par: number | "";
+  score: number | "";
   putts?: number;
   distance?: number;
   strategy?: string;
-  handicap?: number;
+  handicap?: number | "";
 };
 
 export type GameStats = {
@@ -95,7 +95,7 @@ function calculateStats(holes: HoleScore[]): GameStats {
 
   for (const h of holes) {
     if (!h.score) continue;
-    const diff = h.score - h.par;
+    const diff = Number(h.score) - (Number(h.par) || 0);
     if (diff < 0) birdies++;
     else if (diff === 0) pars++;
     else if (diff === 1) bogeys++;

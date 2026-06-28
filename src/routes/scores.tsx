@@ -12,6 +12,7 @@ import {
   deleteSavedScore,
   saveGolfCourseToDb,
   updateUserProfile,
+  updateSavedScore,
 } from "@/lib/db";
 import { getCourseDetails } from "@/lib/golfApi";
 import { Card } from "@/components/ui/card";
@@ -55,7 +56,9 @@ function RecordRoundDialog({
   onOpenChange: (open: boolean) => void;
   courseInfo?: any;
   onSave: (score: any) => void;
+  onDelete?: (scoreId: string) => void;
   defaultHandicap?: number;
+  initialData?: Score | null;
 }) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [location, setLocation] = useState(courseInfo?.name || "");
@@ -70,14 +73,39 @@ function RecordRoundDialog({
 
   useEffect(() => {
     if (open) {
+      if (initialData) {
+        setIsNewCourse(false);
+        setHandicapInput(initialData.handicap ?? defaultHandicap);
+        setHandicapType(initialData.handicapType ?? "none");
+        
+        // Parse "Location (Section)" format
+        let loc = initialData.location || "";
+        let sec = "";
+        const match = loc.match(/(.+?)\s*\((.+)\)$/);
+        if (match) {
+          loc = match[1].trim();
+          sec = match[2].trim();
+        }
+        setLocation(loc);
+        setCourseSection(sec);
+        
+        setDate(initialData.date);
+        setMemo(initialData.memo || "");
+        setHoles(initialData.holes.map(h => ({ ...h, score: h.score ?? "" })) || []);
+        setSetupStep('scorecard');
+        return;
+      }
+
       const hasHoles = courseInfo?.holes && courseInfo.holes.length > 0;
       setIsNewCourse(!hasHoles);
       setHandicapInput(defaultHandicap);
       setHandicapType("none");
       setCourseSection(""); // Reset course section for new entry
+      setLocation(courseInfo?.name || "");
+      setDate(new Date().toISOString().slice(0, 10));
 
       if (hasHoles) {
-        setHoles(courseInfo.holes.map((h: any) => ({ ...h, score: h.par, strategy: "" })));
+        setHoles(courseInfo.holes.map((h: any) => ({ ...h, score: "", strategy: "" })));
         setSetupStep('scorecard');
       } else {
         setSetupStep('choose_holes'); // New course: ask how many holes first
@@ -89,17 +117,16 @@ function RecordRoundDialog({
           hole: i + 1,
           par: 4,
           distance: 300,
-          score: 4,
+          score: "",
           putts: 2,
           handicap: 0
         })));
       }
-      setLocation(courseInfo?.name || "");
     }
-  }, [open, courseInfo, defaultHandicap]);
+  }, [open, courseInfo, defaultHandicap, initialData]);
 
-  const totalScore = useMemo(() => holes.reduce((acc, h) => acc + (h.score || 0), 0), [holes]);
-  const totalPar = useMemo(() => holes.reduce((acc, h) => acc + (h.par || 0), 0), [holes]);
+  const totalScore = useMemo(() => holes.reduce((acc, h) => acc + (Number(h.score) || 0), 0), [holes]);
+  const totalPar = useMemo(() => holes.reduce((acc, h) => acc + (Number(h.par) || 0), 0), [holes]);
   const showHcpColumn = handicapType === 'hole' || handicapType === 'both';
 
   const handleHoleCountChange = (count: number) => {
@@ -107,7 +134,7 @@ function RecordRoundDialog({
     setHoles(Array.from({ length: count }, (_, i) => ({
       hole: i + 1,
       par: 4,
-      score: 4,
+      score: "",
       strategy: "",
       handicap: 0
     })));
@@ -129,9 +156,9 @@ function RecordRoundDialog({
       if (handicapType === "total") {
         finalNetScore = totalScore - hcpInputVal;
       } else if (handicapType === "hole") {
-        finalNetScore = holes.reduce((acc, h) => acc + (h.score - (h.handicap || 0)), 0);
+        finalNetScore = holes.reduce((acc, h) => acc + ((Number(h.score) || 0) - (h.handicap || 0)), 0);
       } else if (handicapType === "both") {
-        finalNetScore = holes.reduce((acc, h) => acc + (h.score - (h.handicap || 0)), 0) - hcpInputVal;
+        finalNetScore = holes.reduce((acc, h) => acc + ((Number(h.score) || 0) - (h.handicap || 0)), 0) - hcpInputVal;
       }
 
       if (isNewCourse) {
@@ -139,7 +166,7 @@ function RecordRoundDialog({
           id: finalCourseId,
           name: finalName,
           holeCount: tempHoleCount,
-          totalPar: holes.reduce((acc, h) => acc + (h.par || 0), 0),
+          totalPar: holes.reduce((acc, h) => acc + (Number(h.par) || 0), 0),
           holes: holes.map(h => ({
             hole: h.hole,
             par: h.par,
@@ -150,6 +177,7 @@ function RecordRoundDialog({
       }
 
       onSave({
+        id: initialData?.id,
         date,
         location: finalName,
         memo,
@@ -177,9 +205,9 @@ function RecordRoundDialog({
     if (handicapType === "total") {
       return totalScore - hcpInputVal;
     } else if (handicapType === "hole") {
-      return holes.reduce((acc, h) => acc + (h.score - (h.handicap || 0)), 0);
+      return holes.reduce((acc, h) => acc + ((Number(h.score) || 0) - (h.handicap || 0)), 0);
     } else { // both
-      return holes.reduce((acc, h) => acc + (h.score - (h.handicap || 0)), 0) - hcpInputVal;
+      return holes.reduce((acc, h) => acc + ((Number(h.score) || 0) - (h.handicap || 0)), 0) - hcpInputVal;
     }
   }, [totalScore, handicapInput, handicapType, holes]);
 
@@ -188,7 +216,7 @@ function RecordRoundDialog({
       <DialogContent className="w-full max-w-2xl p-0 h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader className="bg-teal-600 px-5 py-4 text-white shrink-0">
           <DialogTitle className="text-lg font-bold flex items-center justify-between">
-            <span>라운드 기록하기</span>
+            <span>{initialData ? "라운드 수정하기" : "라운드 기록하기"}</span>
             {setupStep === 'scorecard' && (
               <div className="flex items-center gap-4 text-sm font-normal">
                 <span className="bg-teal-700 px-3 py-1 rounded-full text-white font-bold">기본(Gross): {totalScore} 타</span>
@@ -439,7 +467,7 @@ function RecordRoundDialog({
                   <tbody>
                     {holes.map((h, i) => {
                       const hcpStrokes = h.handicap || 0;
-                      const showNetDisplay = showHcpColumn && hcpStrokes > 0 && h.score > 0;
+                      const showNetDisplay = showHcpColumn && hcpStrokes > 0 && (h.score !== "" && Number(h.score) > 0);
 
                       return (
                         <tr key={i}>
@@ -450,31 +478,31 @@ function RecordRoundDialog({
                                 <Input
                                   type="number"
                                   value={h.score}
-                                  onChange={e => updateHole(i, "score", Number(e.target.value))}
+                                  onChange={e => updateHole(i, "score", e.target.value === "" ? "" : Number(e.target.value))}
                                   className="w-16 mx-auto text-center font-bold text-teal-600"
                                 />
                                 <span className="text-[10px] font-bold text-slate-400">
-                                  Net: {h.score - hcpStrokes} (-{hcpStrokes})
+                                  Net: {(Number(h.score) || 0) - hcpStrokes} (-{hcpStrokes})
                                 </span>
                               </div>
                             ) : (
                               <Input
                                 type="number"
                                 value={h.score}
-                                onChange={e => updateHole(i, "score", Number(e.target.value))}
+                                onChange={e => updateHole(i, "score", e.target.value === "" ? "" : Number(e.target.value))}
                                 className="w-16 mx-auto text-center font-bold text-teal-600"
                               />
                             )}
                           </td>
                           <td className="p-2 border">
-                            <Input type="number" value={h.par} onChange={e => updateHole(i, "par", Number(e.target.value))} className="w-14 mx-auto text-center" />
+                            <Input type="number" value={h.par} onChange={e => updateHole(i, "par", e.target.value === "" ? "" : Number(e.target.value))} className="w-14 mx-auto text-center" />
                           </td>
                           <td className="p-2 border">
                             <Input type="text" value={h.strategy || ""} onChange={e => updateHole(i, "strategy", e.target.value)} className="w-32 mx-auto text-center" placeholder="공략법" />
                           </td>
                           {showHcpColumn && (
                             <td className="p-2 border">
-                              <Input type="number" value={h.handicap || ""} onChange={e => updateHole(i, "handicap", Number(e.target.value))} className="w-14 mx-auto text-center text-slate-400" placeholder="핸디" />
+                              <Input type="number" value={h.handicap ?? ""} onChange={e => updateHole(i, "handicap", e.target.value === "" ? "" : Number(e.target.value))} className="w-14 mx-auto text-center text-slate-400" placeholder="핸디" />
                             </td>
                           )}
                         </tr>
@@ -484,9 +512,24 @@ function RecordRoundDialog({
                 </table>
               </div>
             </div>
-            <div className="p-4 bg-slate-50 border-t shrink-0 flex justify-end gap-2">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>취소</Button>
-              <Button onClick={save} className="bg-teal-600 hover:bg-teal-700 text-white font-bold">저장하기</Button>
+            <div className="p-4 bg-slate-50 border-t shrink-0 flex justify-between items-center gap-2">
+              {initialData && onDelete ? (
+                <Button 
+                  variant="destructive" 
+                  onClick={() => {
+                    if (window.confirm("정말로 이 기록을 삭제하시겠습니까? 삭제된 데이터는 복구할 수 없습니다.")) {
+                      onDelete(initialData.id!);
+                      onOpenChange(false);
+                    }
+                  }}
+                >
+                  기록 삭제
+                </Button>
+              ) : <div></div>}
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => onOpenChange(false)}>취소</Button>
+                <Button onClick={save} className="bg-teal-600 hover:bg-teal-700 text-white font-bold">저장하기</Button>
+              </div>
             </div>
           </>
         )}
@@ -503,6 +546,7 @@ function ScoresPage() {
   const [courseInfo, setCourseInfo] = useState<any>(null);
   const [games, setGames] = useState<Score[]>([]);
   const [isRecordOpen, setIsRecordOpen] = useState(false);
+  const [editingScore, setEditingScore] = useState<Score | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditHandicapOpen, setIsEditHandicapOpen] = useState(false);
   const [tempHandicap, setTempHandicap] = useState<number | "">(0);
@@ -558,12 +602,28 @@ function ScoresPage() {
   const handleSaveScore = async (scoreData: any) => {
     if (!user) return;
     try {
-      await saveScore(user.uid, scoreData);
+      if (scoreData.id) {
+        await updateSavedScore(scoreData.id, user.uid, scoreData);
+      } else {
+        await saveScore(user.uid, scoreData);
+      }
       const userScores = await getUserScores(user.uid);
       setGames(userScores);
     } catch (err) {
       console.error(err);
       alert("점수 저장에 실패했습니다.");
+    }
+  };
+
+  const handleDeleteScore = async (scoreId: string) => {
+    if (!user) return;
+    try {
+      await deleteSavedScore(scoreId, user.uid);
+      const userScores = await getUserScores(user.uid);
+      setGames(userScores);
+    } catch (err) {
+      console.error(err);
+      alert("점수 삭제에 실패했습니다.");
     }
   };
 
@@ -623,7 +683,10 @@ function ScoresPage() {
               <MapPin className="text-teal-600 w-5 h-5" /> {courseInfo.name}
             </h2>
             <div className="flex gap-2">
-              <Button onClick={() => setIsRecordOpen(true)} className="flex-1 bg-teal-600 hover:bg-teal-700">이 코스로 점수 기록하기</Button>
+              <Button onClick={() => {
+                setEditingScore(null);
+                setIsRecordOpen(true);
+              }} className="flex-1 bg-teal-600 hover:bg-teal-700">이 코스로 점수 기록하기</Button>
               <Button onClick={() => navigate({ to: "/select-course" })} variant="outline" className="flex-1 border-teal-200 text-teal-700 hover:bg-teal-100">골프장 변경</Button>
             </div>
           </Card>
@@ -643,7 +706,14 @@ function ScoresPage() {
 
         <div className="space-y-4">
           {displayGames.map(game => (
-            <Card key={game.id} className="p-4 shadow-sm hover:shadow-md transition-shadow">
+            <Card 
+              key={game.id} 
+              className="p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer border hover:border-teal-300"
+              onClick={() => {
+                setEditingScore(game);
+                setIsRecordOpen(true);
+              }}
+            >
               <div className="flex justify-between items-center mb-2">
                 <span className="text-xs text-slate-500 font-bold">{game.date}</span>
                 <div className="flex items-center gap-2">
@@ -675,8 +745,8 @@ function ScoresPage() {
                 <div className="mt-3 text-[10px] sm:text-xs bg-white rounded border overflow-hidden">
                   {Array.from({ length: Math.ceil(game.holes.length / 9) }).map((_, chunkIndex) => {
                     const chunkHoles = game.holes!.slice(chunkIndex * 9, (chunkIndex + 1) * 9);
-                    const chunkParTotal = chunkHoles.reduce((sum, h) => sum + (h.par || 0), 0);
-                    const chunkScoreTotal = chunkHoles.reduce((sum, h) => sum + (h.score || 0), 0);
+                    const chunkParTotal = chunkHoles.reduce((sum, h) => sum + (Number(h.par) || 0), 0);
+                    const chunkScoreTotal = chunkHoles.reduce((sum, h) => sum + (Number(h.score) || 0), 0);
 
                     return (
                       <div key={chunkIndex} className={`${chunkIndex > 0 ? "border-t" : ""} overflow-x-auto`}>
@@ -720,9 +790,14 @@ function ScoresPage() {
 
       <RecordRoundDialog 
         open={isRecordOpen} 
-        onOpenChange={setIsRecordOpen} 
+        onOpenChange={(open) => {
+          setIsRecordOpen(open);
+          if (!open) setEditingScore(null);
+        }} 
         courseInfo={courseInfo} 
+        initialData={editingScore}
         onSave={handleSaveScore} 
+        onDelete={handleDeleteScore}
         defaultHandicap={profile?.handicap !== undefined ? profile.handicap : (games.length > 0 ? (games[0].handicap ?? 0) : 0)}
       />
 
