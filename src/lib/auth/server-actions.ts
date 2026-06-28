@@ -25,8 +25,23 @@ function getEnvVar(name: string): string | undefined {
 
   if (val) return val;
 
-  val = process.env?.[name] || process.env?.["VITE_" + name] || (globalThis as any)[name] || (globalThis as any)["VITE_" + name] || (import.meta as any).env?.[name] || (import.meta as any).env?.["VITE_" + name];
+  try {
+    if (typeof process !== "undefined" && process.env) {
+      val = process.env[name] || process.env["VITE_" + name];
+    }
+  } catch (e) {}
+
+  if (val) return val;
+
+  const glob = globalThis as any;
+  val = glob?.process?.env?.[name] || glob?.process?.env?.["VITE_" + name] || glob?.[name] || glob?.["VITE_" + name] || glob?.env?.[name];
   
+  if (val) return val;
+
+  try {
+    val = (import.meta as any).env?.[name] || (import.meta as any).env?.["VITE_" + name];
+  } catch (e) {}
+
   return val;
 }
 
