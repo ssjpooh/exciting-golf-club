@@ -54,7 +54,8 @@ async function generateCustomToken(uid: string) {
   if (!serviceAccountVar) {
     console.error("FIREBASE_SERVICE_ACCOUNT is missing");
     const glob = globalThis as any;
-    const debugInfo = `glob.process: ${!!glob.process}, glob.process.env: ${!!glob.process?.env}, VITE_KAKAO in env: ${!!getEnvVar("VITE_KAKAO_REST_API_KEY")}, VITE_FIREBASE_API_KEY in env: ${!!getEnvVar("VITE_FIREBASE_API_KEY")}`;
+    const keys = glob.process?.env?.DEBUG_ENV_KEYS || "none";
+    const debugInfo = `glob.process: ${!!glob.process}, glob.process.env: ${!!glob.process?.env}, KEYS: ${keys}, VITE_KAKAO in env: ${!!getEnvVar("VITE_KAKAO_REST_API_KEY")}, VITE_FIREBASE_API_KEY in env: ${!!getEnvVar("VITE_FIREBASE_API_KEY")}`;
     throw new Error(`SERVER_ERROR: FIREBASE_SERVICE_ACCOUNT is missing. Debug: ${debugInfo}`);
   }
 
