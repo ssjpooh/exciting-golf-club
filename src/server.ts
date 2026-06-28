@@ -71,13 +71,20 @@ export default {
     try {
       // Polyfill Cloudflare bindings into process.env so server actions can easily read them
       if (!globalThis.process) {
-        (globalThis as any).process = { env: {} };
-      }
-      if (!globalThis.process.env) {
-        (globalThis as any).process.env = {};
-      }
-      if (env && typeof env === "object") {
-        Object.assign(globalThis.process.env, env);
+        (globalThis as any).process = { 
+          env: new Proxy({}, {
+            get(_, prop) { return env && typeof prop === "string" ? env[prop] : undefined; }
+          }) 
+        };
+      } else {
+        (globalThis as any).process.env = new Proxy((globalThis as any).process.env || {}, {
+          get(target, prop) {
+            if (env && typeof prop === "string" && env[prop] !== undefined) {
+              return env[prop];
+            }
+            return target[prop];
+          }
+        });
       }
 
       const handler = await getServerEntry();
