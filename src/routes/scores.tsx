@@ -115,7 +115,7 @@ function RecordRoundDialog({
         
         setHoles(Array.from({ length: defaultLength }, (_, i) => ({
           hole: i + 1,
-          par: 4,
+          par: "",
           distance: 300,
           score: "",
           putts: 2,
@@ -133,7 +133,7 @@ function RecordRoundDialog({
     setTempHoleCount(count);
     setHoles(Array.from({ length: count }, (_, i) => ({
       hole: i + 1,
-      par: 4,
+      par: "",
       score: "",
       strategy: "",
       handicap: 0
