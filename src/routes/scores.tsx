@@ -50,7 +50,9 @@ function RecordRoundDialog({
   onOpenChange,
   courseInfo,
   onSave,
+  onDelete,
   defaultHandicap = 0,
+  initialData,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
