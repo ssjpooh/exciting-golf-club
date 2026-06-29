@@ -93,7 +93,14 @@ function RecordRoundDialog({
         
         setDate(initialData.date);
         setMemo(initialData.memo || "");
-        setHoles(initialData.holes.map(h => ({ ...h, score: h.score ?? "" })) || []);
+        
+        // Convert gross score to relative score relative to par
+        setHoles(initialData.holes.map(h => {
+          const parVal = Number(h.par) || 0;
+          const grossScore = Number(h.score) || 0;
+          const relativeScore = grossScore > 0 && parVal > 0 ? (grossScore - parVal) : "";
+          return { ...h, score: relativeScore, strategy: h.strategy || "" };
+        }) || []);
         setSetupStep('scorecard');
         return;
       }
@@ -127,7 +134,16 @@ function RecordRoundDialog({
     }
   }, [open, courseInfo, defaultHandicap, initialData]);
 
-  const totalScore = useMemo(() => holes.reduce((acc, h) => acc + (Number(h.score) || 0), 0), [holes]);
+  // Actual Gross Total Score: Sum of (Par + Relative Score)
+  const totalScore = useMemo(() => {
+    return holes.reduce((acc, h) => {
+      const parVal = Number(h.par) || 0;
+      const scoreVal = h.score === "" ? 0 : Number(h.score);
+      if (h.score === "") return acc;
+      return acc + (parVal + scoreVal);
+    }, 0);
+  }, [holes]);
+
   const totalPar = useMemo(() => holes.reduce((acc, h) => acc + (Number(h.par) || 0), 0), [holes]);
   const showHcpColumn = handicapType === 'hole' || handicapType === 'both';
 
@@ -144,7 +160,34 @@ function RecordRoundDialog({
 
   const updateHole = (idx: number, field: keyof HoleScore, value: number | string) => {
     const newHoles = [...holes];
-    newHoles[idx] = { ...newHoles[idx], [field]: value };
+    if (field === "score") {
+      if (value === "") {
+        newHoles[idx] = { ...newHoles[idx], score: "" };
+      } else {
+        const parVal = Number(newHoles[idx].par) || 4; // Default to 4 if not set yet
+        const relativeVal = Number(value);
+        // Double par limit: actual score must not exceed 2 * par.
+        // Gross score = par + relativeVal <= 2 * par -> relativeVal <= par.
+        // Also minimum gross score is 1: par + relativeVal >= 1 -> relativeVal >= 1 - par.
+        const minRelative = 1 - parVal;
+        const maxRelative = parVal;
+        const boundedVal = Math.max(minRelative, Math.min(maxRelative, relativeVal));
+        newHoles[idx] = { ...newHoles[idx], score: boundedVal };
+      }
+    } else if (field === "par") {
+      newHoles[idx] = { ...newHoles[idx], par: value };
+      // If par changed, validate current score boundaries
+      const scoreVal = newHoles[idx].score;
+      if (scoreVal !== "") {
+        const parVal = Number(value) || 4;
+        const minRelative = 1 - parVal;
+        const maxRelative = parVal;
+        const boundedVal = Math.max(minRelative, Math.min(maxRelative, Number(scoreVal)));
+        newHoles[idx].score = boundedVal;
+      }
+    } else {
+      newHoles[idx] = { ...newHoles[idx], [field]: value };
+    }
     setHoles(newHoles);
   };
 
@@ -154,13 +197,26 @@ function RecordRoundDialog({
       const finalName = courseSection ? `${location} (${courseSection})` : location;
       const hcpInputVal = (handicapType === "total" || handicapType === "both") ? (handicapInput === "" ? 0 : Number(handicapInput)) : 0;
       
-      let finalNetScore = totalScore;
+      // Calculate final actual scores to save in database (convert relative score back to gross score)
+      const holesToSave = holes.map(h => {
+        const parVal = Number(h.par) || 0;
+        const scoreVal = h.score === "" ? "" : (parVal + Number(h.score));
+        return {
+          ...h,
+          score: scoreVal as number | "",
+          handicap: h.handicap || 0
+        };
+      });
+
+      const actualGrossTotal = holesToSave.reduce((acc, h) => acc + (Number(h.score) || 0), 0);
+
+      let finalNetScore = actualGrossTotal;
       if (handicapType === "total") {
-        finalNetScore = totalScore - hcpInputVal;
+        finalNetScore = actualGrossTotal - hcpInputVal;
       } else if (handicapType === "hole") {
-        finalNetScore = holes.reduce((acc, h) => acc + ((Number(h.score) || 0) - (h.handicap || 0)), 0);
+        finalNetScore = holesToSave.reduce((acc, h) => acc + ((Number(h.score) || 0) - (h.handicap || 0)), 0);
       } else if (handicapType === "both") {
-        finalNetScore = holes.reduce((acc, h) => acc + ((Number(h.score) || 0) - (h.handicap || 0)), 0) - hcpInputVal;
+        finalNetScore = holesToSave.reduce((acc, h) => acc + ((Number(h.score) || 0) - (h.handicap || 0)), 0) - hcpInputVal;
       }
 
       if (isNewCourse) {
@@ -183,11 +239,8 @@ function RecordRoundDialog({
         date,
         location: finalName,
         memo,
-        holes: holes.map(h => ({
-          ...h,
-          handicap: h.handicap || 0
-        })),
-        total: totalScore,
+        holes: holesToSave,
+        total: actualGrossTotal,
         courseId: finalCourseId,
         handicap: hcpInputVal,
         netScore: finalNetScore,
@@ -204,12 +257,20 @@ function RecordRoundDialog({
     if (handicapType === "none") return totalScore;
     const hcpInputVal = (handicapType === "total" || handicapType === "both") ? (handicapInput === "" ? 0 : Number(handicapInput)) : 0;
     
+    // Calculate using simulated actual scores
+    const simulatedHoles = holes.map(h => {
+      const parVal = Number(h.par) || 0;
+      const scoreVal = h.score === "" ? "" : (parVal + Number(h.score));
+      return { ...h, score: scoreVal };
+    });
+    const grossTotal = simulatedHoles.reduce((acc, h) => acc + (Number(h.score) || 0), 0);
+
     if (handicapType === "total") {
-      return totalScore - hcpInputVal;
+      return grossTotal - hcpInputVal;
     } else if (handicapType === "hole") {
-      return holes.reduce((acc, h) => acc + ((Number(h.score) || 0) - (h.handicap || 0)), 0);
+      return simulatedHoles.reduce((acc, h) => acc + ((Number(h.score) || 0) - (h.handicap || 0)), 0);
     } else { // both
-      return holes.reduce((acc, h) => acc + ((Number(h.score) || 0) - (h.handicap || 0)), 0) - hcpInputVal;
+      return simulatedHoles.reduce((acc, h) => acc + ((Number(h.score) || 0) - (h.handicap || 0)), 0) - hcpInputVal;
     }
   }, [totalScore, handicapInput, handicapType, holes]);
 
@@ -455,6 +516,14 @@ function RecordRoundDialog({
                 </div>
               )}
 
+              <div className="text-xs bg-teal-50 border border-teal-200 p-3 rounded-lg text-teal-800 space-y-1">
+                <p className="font-bold">⛳ 스코어 카드 입력 가이드 (상대 타수 입력)</p>
+                <ul className="list-disc pl-4 space-y-0.5 text-teal-700">
+                  <li><strong>상대 타수</strong>로 입력합니다 (예: Par 4 홀에서 <strong>-1</strong>은 3타, <strong>0</strong>은 4타, <strong>1</strong>은 5타).</li>
+                  <li><strong>양파(더블파) 제한</strong>이 적용됩니다. 최대 입력 가능한 오버 타수는 각 홀 <strong>Par 값</strong>까지입니다 (예: Par 4 홀은 최대 <strong>+4</strong>까지 입력 가능하며 실제 타수는 8타로 기록됩니다).</li>
+                </ul>
+              </div>
+
               <div className="overflow-x-auto">
                 <table className="w-full text-center border-collapse">
                   <thead>
@@ -469,42 +538,46 @@ function RecordRoundDialog({
                   <tbody>
                     {holes.map((h, i) => {
                       const hcpStrokes = h.handicap || 0;
-                      const showNetDisplay = showHcpColumn && hcpStrokes > 0 && (h.score !== "" && Number(h.score) > 0);
+                      const parVal = Number(h.par) || 0;
+                      const scoreVal = h.score === "" ? "" : Number(h.score);
+                      const computedGross = h.score !== "" && parVal > 0 ? (parVal + Number(h.score)) : "";
+                      const showNetDisplay = showHcpColumn && hcpStrokes > 0 && (computedGross !== "" && Number(computedGross) > 0);
 
                       return (
                         <tr key={i}>
                           <td className="p-2 border font-bold">{h.hole}</td>
                           <td className="p-2 border">
-                            {showNetDisplay ? (
-                              <div className="flex flex-col items-center gap-0.5 min-w-[70px]">
-                                <Input
-                                  type="number"
-                                  value={h.score}
-                                  onChange={e => updateHole(i, "score", e.target.value === "" ? "" : Number(e.target.value))}
-                                  className="w-16 mx-auto text-center font-bold text-teal-600"
-                                />
-                                <span className="text-[10px] font-bold text-slate-400">
-                                  Net: {(Number(h.score) || 0) - hcpStrokes} (-{hcpStrokes})
-                                </span>
-                              </div>
-                            ) : (
+                            <div className="flex flex-col items-center gap-0.5 min-w-[80px]">
                               <Input
                                 type="number"
                                 value={h.score}
                                 onChange={e => updateHole(i, "score", e.target.value === "" ? "" : Number(e.target.value))}
-                                className="w-16 mx-auto text-center font-bold text-teal-600"
+                                className="w-16 mx-auto text-center font-bold text-teal-600 h-8"
+                                placeholder="0"
+                                min={parVal > 0 ? 1 - parVal : -4}
+                                max={parVal > 0 ? parVal : 4}
                               />
-                            )}
+                              {computedGross !== "" && (
+                                <span className="text-[10px] font-extrabold text-teal-800 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-100">
+                                  {computedGross}타
+                                </span>
+                              )}
+                              {showNetDisplay && (
+                                <span className="text-[9px] font-bold text-slate-400">
+                                  Net: {Number(computedGross) - hcpStrokes} (-{hcpStrokes})
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="p-2 border">
-                            <Input type="number" value={h.par} onChange={e => updateHole(i, "par", e.target.value === "" ? "" : Number(e.target.value))} className="w-14 mx-auto text-center" />
+                            <Input type="number" value={h.par} onChange={e => updateHole(i, "par", e.target.value === "" ? "" : Number(e.target.value))} className="w-14 mx-auto text-center h-8" />
                           </td>
                           <td className="p-2 border">
-                            <Input type="text" value={h.strategy || ""} onChange={e => updateHole(i, "strategy", e.target.value)} className="w-32 mx-auto text-center" placeholder="공략법" />
+                            <Input type="text" value={h.strategy || ""} onChange={e => updateHole(i, "strategy", e.target.value)} className="w-32 mx-auto text-center h-8" placeholder="공략법" />
                           </td>
                           {showHcpColumn && (
                             <td className="p-2 border">
-                              <Input type="number" value={h.handicap ?? ""} onChange={e => updateHole(i, "handicap", e.target.value === "" ? "" : Number(e.target.value))} className="w-14 mx-auto text-center text-slate-400" placeholder="핸디" />
+                              <Input type="number" value={h.handicap ?? ""} onChange={e => updateHole(i, "handicap", e.target.value === "" ? "" : Number(e.target.value))} className="w-14 mx-auto text-center text-slate-400 h-8" placeholder="핸디" />
                             </td>
                           )}
                         </tr>
