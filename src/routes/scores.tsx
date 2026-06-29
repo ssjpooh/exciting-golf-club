@@ -166,22 +166,33 @@ function RecordRoundDialog({
       } else {
         const parVal = Number(newHoles[idx].par) || 4; // Default to 4 if not set yet
         const relativeVal = Number(value);
+        
         // Double par limit: actual score must not exceed 2 * par.
-        // Gross score = par + relativeVal <= 2 * par -> relativeVal <= par.
-        // Also minimum gross score is 1: par + relativeVal >= 1 -> relativeVal >= 1 - par.
+        // Also client requested no number over 10 (absolute input limit is 10).
+        // Minimum score: Must be at least 1 (Hole-in-one limit).
+        // e.g. Par 4 -> actual score >= 1 -> relativeVal >= -3 (Par - 1).
         const minRelative = 1 - parVal;
-        const maxRelative = parVal;
+        const maxRelative = Math.min(parVal, 10);
+        
         const boundedVal = Math.max(minRelative, Math.min(maxRelative, relativeVal));
         newHoles[idx] = { ...newHoles[idx], score: boundedVal };
       }
     } else if (field === "par") {
-      newHoles[idx] = { ...newHoles[idx], par: value };
+      if (value === "") {
+        newHoles[idx] = { ...newHoles[idx], par: "" };
+      } else {
+        const parNum = Number(value);
+        // Constraint: Par must not exceed 10
+        const boundedPar = Math.min(10, parNum);
+        newHoles[idx] = { ...newHoles[idx], par: boundedPar };
+      }
+
       // If par changed, validate current score boundaries
       const scoreVal = newHoles[idx].score;
       if (scoreVal !== "") {
-        const parVal = Number(value) || 4;
+        const parVal = Number(newHoles[idx].par) || 4;
         const minRelative = 1 - parVal;
-        const maxRelative = parVal;
+        const maxRelative = Math.min(parVal, 10);
         const boundedVal = Math.max(minRelative, Math.min(maxRelative, Number(scoreVal)));
         newHoles[idx].score = boundedVal;
       }
@@ -568,7 +579,7 @@ function RecordRoundDialog({
                                 className="w-16 mx-auto text-center font-bold text-teal-600 h-8"
                                 placeholder="0"
                                 min={parVal > 0 ? 1 - parVal : -4}
-                                max={parVal > 0 ? parVal : 4}
+                                max={parVal > 0 ? Math.min(parVal, 10) : 10}
                               />
                               {computedGross !== "" && (
                                 <span className="text-[10px] font-extrabold text-teal-800 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-100">
@@ -583,7 +594,14 @@ function RecordRoundDialog({
                             </div>
                           </td>
                           <td className="p-2 border">
-                            <Input type="number" value={h.par} onChange={e => updateHole(i, "par", e.target.value === "" ? "" : Number(e.target.value))} className="w-14 mx-auto text-center h-8" />
+                            <Input 
+                              type="number" 
+                              value={h.par} 
+                              onChange={e => updateHole(i, "par", e.target.value === "" ? "" : Number(e.target.value))} 
+                              className="w-14 mx-auto text-center h-8" 
+                              min={1}
+                              max={10}
+                            />
                           </td>
                           <td className="p-2 border">
                             <Input type="text" value={h.strategy || ""} onChange={e => updateHole(i, "strategy", e.target.value)} className="w-32 mx-auto text-center h-8" placeholder="공략법" />
