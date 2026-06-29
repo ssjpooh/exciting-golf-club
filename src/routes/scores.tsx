@@ -278,13 +278,26 @@ function RecordRoundDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-full max-w-2xl p-0 h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader className="bg-teal-600 px-5 py-4 text-white shrink-0">
-          <DialogTitle className="text-lg font-bold flex items-center justify-between">
+          <DialogTitle className="text-lg font-bold flex flex-wrap items-center justify-between gap-2 pr-8">
             <span>{initialData ? "라운드 수정하기" : "라운드 기록하기"}</span>
             {setupStep === 'scorecard' && (
-              <div className="flex items-center gap-4 text-sm font-normal">
-                <span className="bg-teal-700 px-3 py-1 rounded-full text-white font-bold">기본(Gross): {totalScore} 타</span>
+              <div className="flex items-center gap-2 text-xs font-normal">
+                <span className="bg-teal-700 px-2.5 py-0.5 rounded-full text-white font-bold">
+                  기본: {totalScore}타
+                </span>
+                <span className="bg-teal-800 px-2.5 py-0.5 rounded-full text-white font-bold">
+                  스코어: {(() => {
+                    const rel = holes.reduce((acc, h) => {
+                      if (h.score === "") return acc;
+                      return acc + Number(h.score);
+                    }, 0);
+                    return rel > 0 ? `+${rel}` : rel === 0 ? "E (Even)" : rel;
+                  })()}
+                </span>
                 {handicapType !== "none" && (
-                  <span className="bg-teal-900 px-3 py-1 rounded-full text-white font-bold">넷(Net): {dialogNetScore} 타</span>
+                  <span className="bg-teal-950 px-2.5 py-0.5 rounded-full text-white font-bold">
+                    넷(Net): {dialogNetScore}타
+                  </span>
                 )}
               </div>
             )}
