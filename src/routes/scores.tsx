@@ -543,7 +543,8 @@ function RecordRoundDialog({
               <div className="text-xs bg-teal-50 border border-teal-200 p-3 rounded-lg text-teal-800 space-y-1">
                 <p className="font-bold">⛳ 스코어 카드 입력 가이드 (상대 타수 입력)</p>
                 <ul className="list-disc pl-4 space-y-0.5 text-teal-700">
-                  <li><strong>상대 타수</strong>로 입력합니다 (예: Par 4 홀에서 <strong>-1</strong>은 3타, <strong>0</strong>은 4타, <strong>1</strong>은 5타).</li>
+                  <li><strong>상대 타수(오버타)</strong>로 입력합니다 (예: Par 4 홀에서 <strong>-1</strong>은 3타, <strong>0</strong>은 4타, <strong>1</strong>은 5타).</li>
+                  <li><strong>최소 타수 제한(홀인원)</strong>: 실제 타수가 1타 미만이 될 수 없으므로, 마이너스(-) 입력은 <strong>-(Par - 1)</strong>까지만 가능합니다 (예: Par 3 홀은 최대 <strong>-2</strong>까지만 입력 가능하며 1타로 기록됩니다).</li>
                   <li><strong>양파(더블파) 제한</strong>이 적용됩니다. 최대 입력 가능한 오버 타수는 각 홀 <strong>Par 값</strong>까지입니다 (예: Par 4 홀은 최대 <strong>+4</strong>까지 입력 가능하며 실제 타수는 8타로 기록됩니다).</li>
                 </ul>
               </div>
@@ -572,25 +573,75 @@ function RecordRoundDialog({
                         <tr key={i}>
                           <td className="p-2 border font-bold">{h.hole}</td>
                           <td className="p-2 border">
-                            <Input 
-                              type="number" 
-                              value={h.par} 
-                              onChange={e => updateHole(i, "par", e.target.value === "" ? "" : Number(e.target.value))} 
-                              className="w-14 mx-auto text-center h-8 font-bold" 
-                              min={1}
-                              max={10}
-                            />
+                            <div className="flex items-center justify-center gap-1 mx-auto max-w-[120px]">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 border rounded hover:bg-slate-100 font-bold text-slate-500 shrink-0"
+                                onClick={() => {
+                                  const currentVal = h.par === "" ? 4 : Number(h.par);
+                                  updateHole(i, "par", Math.max(1, currentVal - 1));
+                                }}
+                              >
+                                -
+                              </Button>
+                              <Input 
+                                type="number" 
+                                value={h.par} 
+                                onChange={e => updateHole(i, "par", e.target.value === "" ? "" : Number(e.target.value))} 
+                                className="w-10 text-center h-8 font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0" 
+                                min={1}
+                                max={10}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 border rounded hover:bg-slate-100 font-bold text-slate-500 shrink-0"
+                                onClick={() => {
+                                  const currentVal = h.par === "" ? 4 : Number(h.par);
+                                  updateHole(i, "par", Math.min(10, currentVal + 1));
+                                }}
+                              >
+                                +
+                              </Button>
+                            </div>
                           </td>
                           <td className="p-2 border">
-                            <Input
-                              type="number"
-                              value={h.score}
-                              onChange={e => updateHole(i, "score", e.target.value === "" ? "" : Number(e.target.value))}
-                              className="w-16 mx-auto text-center font-bold text-teal-600 h-8"
-                              placeholder="0"
-                              min={parVal > 0 ? 1 - parVal : -4}
-                              max={parVal > 0 ? Math.min(parVal, 10) : 10}
-                            />
+                            <div className="flex items-center justify-center gap-1 mx-auto max-w-[130px]">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 border rounded hover:bg-slate-100 font-bold text-slate-500 shrink-0"
+                                onClick={() => {
+                                  const currentVal = h.score === "" ? 0 : Number(h.score);
+                                  const minRelative = 1 - parVal;
+                                  updateHole(i, "score", Math.max(minRelative, currentVal - 1));
+                                }}
+                              >
+                                -
+                              </Button>
+                              <Input
+                                type="number"
+                                value={h.score}
+                                onChange={e => updateHole(i, "score", e.target.value === "" ? "" : Number(e.target.value))}
+                                className="w-10 text-center font-bold text-teal-600 h-8 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0"
+                                placeholder="0"
+                                min={parVal > 0 ? 1 - parVal : -4}
+                                max={parVal > 0 ? Math.min(parVal, 10) : 10}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 border rounded hover:bg-slate-100 font-bold text-slate-500 shrink-0"
+                                onClick={() => {
+                                  const currentVal = h.score === "" ? 0 : Number(h.score);
+                                  const maxRelative = parVal > 0 ? Math.min(parVal, 10) : 10;
+                                  updateHole(i, "score", Math.min(maxRelative, currentVal + 1));
+                                }}
+                              >
+                                +
+                              </Button>
+                            </div>
                           </td>
                           <td className="p-2 border font-extrabold text-teal-800 bg-teal-50/40">
                             <div className="flex flex-col items-center justify-center min-w-[70px]">
