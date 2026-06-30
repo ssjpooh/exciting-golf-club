@@ -553,8 +553,9 @@ function RecordRoundDialog({
                   <thead>
                     <tr className="bg-slate-100">
                       <th className="p-2 border">Hole</th>
-                      <th className="p-2 border">Score</th>
                       <th className="p-2 border">Par</th>
+                      <th className="p-2 border">오버타</th>
+                      <th className="p-2 border">총스코어</th>
                       <th className="p-2 border">공략법</th>
                       {showHcpColumn && <th className="p-2 border">홀 핸디캡</th>}
                     </tr>
@@ -571,37 +572,35 @@ function RecordRoundDialog({
                         <tr key={i}>
                           <td className="p-2 border font-bold">{h.hole}</td>
                           <td className="p-2 border">
-                            <div className="flex flex-col items-center gap-0.5 min-w-[80px]">
-                              <Input
-                                type="number"
-                                value={h.score}
-                                onChange={e => updateHole(i, "score", e.target.value === "" ? "" : Number(e.target.value))}
-                                className="w-16 mx-auto text-center font-bold text-teal-600 h-8"
-                                placeholder="0"
-                                min={parVal > 0 ? 1 - parVal : -4}
-                                max={parVal > 0 ? Math.min(parVal, 10) : 10}
-                              />
-                              {computedGross !== "" && (
-                                <span className="text-[10px] font-extrabold text-teal-800 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-100">
-                                  {computedGross}타
-                                </span>
-                              )}
+                            <Input 
+                              type="number" 
+                              value={h.par} 
+                              onChange={e => updateHole(i, "par", e.target.value === "" ? "" : Number(e.target.value))} 
+                              className="w-14 mx-auto text-center h-8 font-bold" 
+                              min={1}
+                              max={10}
+                            />
+                          </td>
+                          <td className="p-2 border">
+                            <Input
+                              type="number"
+                              value={h.score}
+                              onChange={e => updateHole(i, "score", e.target.value === "" ? "" : Number(e.target.value))}
+                              className="w-16 mx-auto text-center font-bold text-teal-600 h-8"
+                              placeholder="0"
+                              min={parVal > 0 ? 1 - parVal : -4}
+                              max={parVal > 0 ? Math.min(parVal, 10) : 10}
+                            />
+                          </td>
+                          <td className="p-2 border font-extrabold text-teal-800 bg-teal-50/40">
+                            <div className="flex flex-col items-center justify-center min-w-[70px]">
+                              <span>{computedGross !== "" ? `${computedGross}타` : "-"}</span>
                               {showNetDisplay && (
                                 <span className="text-[9px] font-bold text-slate-400">
                                   Net: {Number(computedGross) - hcpStrokes} (-{hcpStrokes})
                                 </span>
                               )}
                             </div>
-                          </td>
-                          <td className="p-2 border">
-                            <Input 
-                              type="number" 
-                              value={h.par} 
-                              onChange={e => updateHole(i, "par", e.target.value === "" ? "" : Number(e.target.value))} 
-                              className="w-14 mx-auto text-center h-8" 
-                              min={1}
-                              max={10}
-                            />
                           </td>
                           <td className="p-2 border">
                             <Input type="text" value={h.strategy || ""} onChange={e => updateHole(i, "strategy", e.target.value)} className="w-32 mx-auto text-center h-8" placeholder="공략법" />
