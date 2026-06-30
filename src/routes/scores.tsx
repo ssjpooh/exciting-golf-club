@@ -114,7 +114,7 @@ function RecordRoundDialog({
       setDate(new Date().toISOString().slice(0, 10));
 
       if (hasHoles) {
-        setHoles(courseInfo.holes.map((h: any) => ({ ...h, score: "", strategy: "" })));
+        setHoles(courseInfo.holes.map((h: any) => ({ ...h, par: h.par || 4, score: "", strategy: "" })));
         setSetupStep('scorecard');
       } else {
         setSetupStep('choose_holes'); // New course: ask how many holes first
