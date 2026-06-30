@@ -955,7 +955,7 @@ function ScoresPage() {
                         <table className="w-full text-center border-collapse whitespace-nowrap">
                           <thead>
                             <tr className="bg-slate-50">
-                              <th className="p-1 sm:p-1.5 border-b border-r text-slate-500 font-normal w-10 sm:w-12">{chunkIndex === 0 ? "OUT" : "IN"}</th>
+                              <th className="p-1 sm:p-1.5 border-b border-r text-slate-500 font-normal w-10 sm:w-12">{chunkIndex === 0 ? "전반" : "후반"}</th>
                               {chunkHoles.map(h => <th key={`hole-${h.hole}`} className="p-1 sm:p-1.5 border-b border-r text-slate-500 font-normal min-w-[24px] sm:min-w-[32px]">{h.hole}</th>)}
                               <th className="p-1 sm:p-1.5 border-b text-slate-500 font-normal min-w-[32px]">합</th>
                             </tr>
