@@ -124,7 +124,7 @@ function RecordRoundDialog({
         
         setHoles(Array.from({ length: defaultLength }, (_, i) => ({
           hole: i + 1,
-          par: "",
+          par: 4,
           distance: 300,
           score: "",
           putts: 2,
@@ -573,14 +573,17 @@ function RecordRoundDialog({
                         <tr key={i}>
                           <td className="p-2 border font-bold">{h.hole}</td>
                           <td className="p-2 border">
-                            <div className="flex items-center justify-center gap-1 mx-auto max-w-[120px]">
+                            <div className="flex items-center justify-center gap-1 mx-auto max-w-[100px]">
                               <Button
                                 type="button"
                                 variant="ghost"
-                                className="h-7 w-7 p-0 border rounded hover:bg-slate-100 font-bold text-slate-500 shrink-0"
+                                className="h-5 w-5 p-0 border rounded hover:bg-slate-100 font-extrabold text-slate-500 text-[10px] shrink-0"
                                 onClick={() => {
-                                  const currentVal = h.par === "" ? 4 : Number(h.par);
-                                  updateHole(i, "par", Math.max(1, currentVal - 1));
+                                  if (h.par === "") {
+                                    updateHole(i, "par", 4);
+                                  } else {
+                                    updateHole(i, "par", Math.max(1, Number(h.par) - 1));
+                                  }
                                 }}
                               >
                                 -
@@ -589,17 +592,20 @@ function RecordRoundDialog({
                                 type="number" 
                                 value={h.par} 
                                 onChange={e => updateHole(i, "par", e.target.value === "" ? "" : Number(e.target.value))} 
-                                className="w-10 text-center h-8 font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0" 
+                                className="w-8 text-center h-6 font-bold text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0" 
                                 min={1}
                                 max={10}
                               />
                               <Button
                                 type="button"
                                 variant="ghost"
-                                className="h-7 w-7 p-0 border rounded hover:bg-slate-100 font-bold text-slate-500 shrink-0"
+                                className="h-5 w-5 p-0 border rounded hover:bg-slate-100 font-extrabold text-slate-500 text-[10px] shrink-0"
                                 onClick={() => {
-                                  const currentVal = h.par === "" ? 4 : Number(h.par);
-                                  updateHole(i, "par", Math.min(10, currentVal + 1));
+                                  if (h.par === "") {
+                                    updateHole(i, "par", 4);
+                                  } else {
+                                    updateHole(i, "par", Math.min(10, Number(h.par) + 1));
+                                  }
                                 }}
                               >
                                 +
@@ -607,11 +613,11 @@ function RecordRoundDialog({
                             </div>
                           </td>
                           <td className="p-2 border">
-                            <div className="flex items-center justify-center gap-1 mx-auto max-w-[130px]">
+                            <div className="flex items-center justify-center gap-1 mx-auto max-w-[110px]">
                               <Button
                                 type="button"
                                 variant="ghost"
-                                className="h-7 w-7 p-0 border rounded hover:bg-slate-100 font-bold text-slate-500 shrink-0"
+                                className="h-5 w-5 p-0 border rounded hover:bg-slate-100 font-extrabold text-slate-500 text-[10px] shrink-0"
                                 onClick={() => {
                                   const currentVal = h.score === "" ? 0 : Number(h.score);
                                   const minRelative = 1 - parVal;
@@ -624,7 +630,7 @@ function RecordRoundDialog({
                                 type="number"
                                 value={h.score}
                                 onChange={e => updateHole(i, "score", e.target.value === "" ? "" : Number(e.target.value))}
-                                className="w-10 text-center font-bold text-teal-600 h-8 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0"
+                                className="w-8 text-center font-bold text-teal-600 h-6 text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0"
                                 placeholder="0"
                                 min={parVal > 0 ? 1 - parVal : -4}
                                 max={parVal > 0 ? Math.min(parVal, 10) : 10}
@@ -632,7 +638,7 @@ function RecordRoundDialog({
                               <Button
                                 type="button"
                                 variant="ghost"
-                                className="h-7 w-7 p-0 border rounded hover:bg-slate-100 font-bold text-slate-500 shrink-0"
+                                className="h-5 w-5 p-0 border rounded hover:bg-slate-100 font-extrabold text-slate-500 text-[10px] shrink-0"
                                 onClick={() => {
                                   const currentVal = h.score === "" ? 0 : Number(h.score);
                                   const maxRelative = parVal > 0 ? Math.min(parVal, 10) : 10;
