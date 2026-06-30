@@ -72,6 +72,7 @@ function RecordRoundDialog({
   const [isNewCourse, setIsNewCourse] = useState(false);
   const [tempHoleCount, setTempHoleCount] = useState<number>(18);
   const [setupStep, setSetupStep] = useState<'choose_holes' | 'scorecard'>('scorecard');
+  const [fontSizePreset, setFontSizePreset] = useState<'normal' | 'medium' | 'large'>('normal');
 
   useEffect(() => {
     if (open) {
@@ -549,130 +550,169 @@ function RecordRoundDialog({
                 </ul>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-center border-collapse">
-                  <thead>
-                    <tr className="bg-slate-100">
-                      <th className="p-2 border">Hole</th>
-                      <th className="p-2 border">Par</th>
-                      <th className="p-2 border">오버타</th>
-                      <th className="p-2 border">총스코어</th>
-                      <th className="p-2 border">공략법</th>
-                      {showHcpColumn && <th className="p-2 border">홀 핸디캡</th>}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {holes.map((h, i) => {
-                      const hcpStrokes = h.handicap || 0;
-                      const parVal = Number(h.par) || 0;
-                      const scoreVal = h.score === "" ? "" : Number(h.score);
-                      const computedGross = h.score !== "" && parVal > 0 ? (parVal + Number(h.score)) : "";
-                      const showNetDisplay = showHcpColumn && hcpStrokes > 0 && (computedGross !== "" && Number(computedGross) > 0);
-
-                      return (
-                        <tr key={i}>
-                          <td className="p-2 border font-bold">{h.hole}</td>
-                          <td className="p-2 border">
-                            <div className="flex items-center justify-center gap-1 mx-auto max-w-[110px]">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                className="h-6 w-6 p-0 border rounded hover:bg-slate-100 font-extrabold text-slate-500 text-xs shrink-0"
-                                onClick={() => {
-                                  if (h.par === "") {
-                                    updateHole(i, "par", 4);
-                                  } else {
-                                    updateHole(i, "par", Math.max(1, Number(h.par) - 1));
-                                  }
-                                }}
-                              >
-                                -
-                              </Button>
-                              <Input 
-                                type="number" 
-                                value={h.par} 
-                                onChange={e => updateHole(i, "par", e.target.value === "" ? "" : Number(e.target.value))} 
-                                className="w-10 text-center h-7 font-bold text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0" 
-                                min={1}
-                                max={10}
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                className="h-6 w-6 p-0 border rounded hover:bg-slate-100 font-extrabold text-slate-500 text-xs shrink-0"
-                                onClick={() => {
-                                  if (h.par === "") {
-                                    updateHole(i, "par", 4);
-                                  } else {
-                                    updateHole(i, "par", Math.min(10, Number(h.par) + 1));
-                                  }
-                                }}
-                              >
-                                +
-                              </Button>
-                            </div>
-                          </td>
-                          <td className="p-2 border">
-                            <div className="flex items-center justify-center gap-1 mx-auto max-w-[120px]">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                className="h-6 w-6 p-0 border rounded hover:bg-slate-100 font-extrabold text-slate-500 text-xs shrink-0"
-                                onClick={() => {
-                                  const currentVal = h.score === "" ? 0 : Number(h.score);
-                                  const minRelative = 1 - parVal;
-                                  updateHole(i, "score", Math.max(minRelative, currentVal - 1));
-                                }}
-                              >
-                                -
-                              </Button>
-                              <Input
-                                type="number"
-                                value={h.score}
-                                onChange={e => updateHole(i, "score", e.target.value === "" ? "" : Number(e.target.value))}
-                                className="w-10 text-center font-bold text-teal-600 h-7 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0"
-                                placeholder="0"
-                                min={parVal > 0 ? 1 - parVal : -4}
-                                max={parVal > 0 ? Math.min(parVal, 10) : 10}
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                className="h-6 w-6 p-0 border rounded hover:bg-slate-100 font-extrabold text-slate-500 text-xs shrink-0"
-                                onClick={() => {
-                                  const currentVal = h.score === "" ? 0 : Number(h.score);
-                                  const maxRelative = parVal > 0 ? Math.min(parVal, 10) : 10;
-                                  updateHole(i, "score", Math.min(maxRelative, currentVal + 1));
-                                }}
-                              >
-                                +
-                              </Button>
-                            </div>
-                          </td>
-                          <td className="p-2 border font-extrabold text-teal-800 bg-teal-50/40 text-sm">
-                            <div className="flex flex-col items-center justify-center min-w-[70px]">
-                              <span>{computedGross !== "" ? `${computedGross}타` : "-"}</span>
-                              {showNetDisplay && (
-                                <span className="text-[9px] font-bold text-slate-400">
-                                  Net: {Number(computedGross) - hcpStrokes} (-{hcpStrokes})
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="p-2 border">
-                            <Input type="text" value={h.strategy || ""} onChange={e => updateHole(i, "strategy", e.target.value)} className="w-32 mx-auto text-center h-8" placeholder="공략법" />
-                          </td>
-                          {showHcpColumn && (
-                            <td className="p-2 border">
-                              <Input type="number" value={h.handicap ?? ""} onChange={e => updateHole(i, "handicap", e.target.value === "" ? "" : Number(e.target.value))} className="w-14 mx-auto text-center text-slate-400 h-8" placeholder="핸디" />
-                            </td>
-                          )}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+              {/* 글자 크기 선택 조절 바 */}
+              <div className="flex items-center justify-end gap-2 bg-slate-50 border p-2.5 rounded-lg">
+                <Label className="text-xs font-extrabold text-slate-600">글자 크기 조절:</Label>
+                <select
+                  value={fontSizePreset}
+                  onChange={e => setFontSizePreset(e.target.value as any)}
+                  className="flex h-8 w-28 rounded-md border border-input bg-white px-2 py-1 text-xs font-bold shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <option value="normal">보통</option>
+                  <option value="medium">조금 크게</option>
+                  <option value="large">크게</option>
+                </select>
               </div>
+
+              {/* Dynamic Sizing mapping derived from fontSizePreset */}
+              {(() => {
+                let btnSize = "h-6 w-6 text-xs";
+                let inputSize = "w-10 h-7 text-sm";
+                let tableTextSize = "text-sm";
+                let containerMaxPar = "max-w-[110px]";
+                let containerMaxScore = "max-w-[120px]";
+
+                if (fontSizePreset === "medium") {
+                  btnSize = "h-8 w-8 text-sm";
+                  inputSize = "w-12 h-9 text-base";
+                  tableTextSize = "text-base";
+                  containerMaxPar = "max-w-[130px]";
+                  containerMaxScore = "max-w-[140px]";
+                } else if (fontSizePreset === "large") {
+                  btnSize = "h-10 w-10 text-base";
+                  inputSize = "w-16 h-11 text-lg";
+                  tableTextSize = "text-lg";
+                  containerMaxPar = "max-w-[160px]";
+                  containerMaxScore = "max-w-[170px]";
+                }
+
+                return (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-center border-collapse">
+                      <thead>
+                        <tr className="bg-slate-100">
+                          <th className="p-2 border">Hole</th>
+                          <th className="p-2 border">Par</th>
+                          <th className="p-2 border">오버타</th>
+                          <th className="p-2 border">총스코어</th>
+                          <th className="p-2 border">공략법</th>
+                          {showHcpColumn && <th className="p-2 border">홀 핸디캡</th>}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {holes.map((h, i) => {
+                          const hcpStrokes = h.handicap || 0;
+                          const parVal = Number(h.par) || 0;
+                          const scoreVal = h.score === "" ? "" : Number(h.score);
+                          const computedGross = h.score !== "" && parVal > 0 ? (parVal + Number(h.score)) : "";
+                          const showNetDisplay = showHcpColumn && hcpStrokes > 0 && (computedGross !== "" && Number(computedGross) > 0);
+
+                          return (
+                            <tr key={i} className={tableTextSize}>
+                              <td className="p-2 border font-bold">{h.hole}</td>
+                              <td className="p-2 border">
+                                <div className={`flex items-center justify-center gap-1 mx-auto ${containerMaxPar}`}>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    className={`${btnSize} p-0 border rounded hover:bg-slate-100 font-extrabold text-slate-500 shrink-0`}
+                                    onClick={() => {
+                                      if (h.par === "") {
+                                        updateHole(i, "par", 4);
+                                      } else {
+                                        updateHole(i, "par", Math.max(1, Number(h.par) - 1));
+                                      }
+                                    }}
+                                  >
+                                    -
+                                  </Button>
+                                  <Input 
+                                    type="number" 
+                                    value={h.par} 
+                                    onChange={e => updateHole(i, "par", e.target.value === "" ? "" : Number(e.target.value))} 
+                                    className={`${inputSize} text-center font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0`} 
+                                    min={1}
+                                    max={10}
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    className={`${btnSize} p-0 border rounded hover:bg-slate-100 font-extrabold text-slate-500 shrink-0`}
+                                    onClick={() => {
+                                      if (h.par === "") {
+                                        updateHole(i, "par", 4);
+                                      } else {
+                                        updateHole(i, "par", Math.min(10, Number(h.par) + 1));
+                                      }
+                                    }}
+                                  >
+                                    +
+                                  </Button>
+                                </div>
+                              </td>
+                              <td className="p-2 border">
+                                <div className={`flex items-center justify-center gap-1 mx-auto ${containerMaxScore}`}>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    className={`${btnSize} p-0 border rounded hover:bg-slate-100 font-extrabold text-slate-500 shrink-0`}
+                                    onClick={() => {
+                                      const currentVal = h.score === "" ? 0 : Number(h.score);
+                                      const minRelative = 1 - parVal;
+                                      updateHole(i, "score", Math.max(minRelative, currentVal - 1));
+                                    }}
+                                  >
+                                    -
+                                  </Button>
+                                  <Input
+                                    type="number"
+                                    value={h.score}
+                                    onChange={e => updateHole(i, "score", e.target.value === "" ? "" : Number(e.target.value))}
+                                    className={`${inputSize} text-center font-bold text-teal-600 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0`}
+                                    placeholder="0"
+                                    min={parVal > 0 ? 1 - parVal : -4}
+                                    max={parVal > 0 ? Math.min(parVal, 10) : 10}
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    className={`${btnSize} p-0 border rounded hover:bg-slate-100 font-extrabold text-slate-500 shrink-0`}
+                                    onClick={() => {
+                                      const currentVal = h.score === "" ? 0 : Number(h.score);
+                                      const maxRelative = parVal > 0 ? Math.min(parVal, 10) : 10;
+                                      updateHole(i, "score", Math.min(maxRelative, currentVal + 1));
+                                    }}
+                                  >
+                                    +
+                                  </Button>
+                                </div>
+                              </td>
+                              <td className="p-2 border font-extrabold text-teal-800 bg-teal-50/40">
+                                <div className="flex flex-col items-center justify-center min-w-[70px]">
+                                  <span>{computedGross !== "" ? `${computedGross}타` : "-"}</span>
+                                  {showNetDisplay && (
+                                    <span className="text-[9px] font-bold text-slate-400">
+                                      Net: {Number(computedGross) - hcpStrokes} (-{hcpStrokes})
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="p-2 border">
+                                <Input type="text" value={h.strategy || ""} onChange={e => updateHole(i, "strategy", e.target.value)} className="w-32 mx-auto text-center h-8" placeholder="공략법" />
+                              </td>
+                              {showHcpColumn && (
+                                <td className="p-2 border">
+                                  <Input type="number" value={h.handicap ?? ""} onChange={e => updateHole(i, "handicap", e.target.value === "" ? "" : Number(e.target.value))} className="w-14 mx-auto text-center text-slate-400 h-8" placeholder="핸디" />
+                                </td>
+                              )}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })()}
             </div>
             <div className="p-4 bg-slate-50 border-t shrink-0 flex justify-between items-center gap-2">
               {initialData && onDelete ? (
