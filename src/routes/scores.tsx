@@ -752,8 +752,12 @@ function ScoresPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditHandicapOpen, setIsEditHandicapOpen] = useState(false);
   const [tempHandicap, setTempHandicap] = useState<number | "">(0);
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>("");
+  const [startDate, setStartDate] = useState<string>(() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 1);
+    return d.toISOString().slice(0, 10);
+  });
+  const [endDate, setEndDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -981,14 +985,32 @@ function ScoresPage() {
                 className="h-8 py-1 px-2 border w-32 bg-slate-50 text-xs font-bold"
               />
             </div>
-          </div>
-          {(startDate || endDate) && (
             <Button
-              variant="ghost"
+              type="button"
+              variant="outline"
               size="sm"
               onClick={() => {
                 setStartDate("");
                 setEndDate("");
+              }}
+              className="h-8 px-2.5 text-xs font-bold border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100 rounded cursor-pointer"
+            >
+              전체 보기
+            </Button>
+          </div>
+          {(startDate !== (() => {
+            const d = new Date();
+            d.setFullYear(d.getFullYear() - 1);
+            return d.toISOString().slice(0, 10);
+          })() || endDate !== new Date().toISOString().slice(0, 10)) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                const d = new Date();
+                d.setFullYear(d.getFullYear() - 1);
+                setStartDate(d.toISOString().slice(0, 10));
+                setEndDate(new Date().toISOString().slice(0, 10));
               }}
               className="h-8 px-2.5 text-xs font-bold text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-100 rounded self-end sm:self-auto cursor-pointer"
             >

@@ -47,6 +47,7 @@ import {
   Trophy,
   Edit2,
   Trash2,
+  MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -387,38 +388,127 @@ function AdminUsersPage() {
 
       {/* 점수 보기 다이얼로그 */}
       <Dialog open={scoreDialogOpen} onOpenChange={setScoreDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] max-h-[80vh] overflow-y-auto bg-white">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-amber-500" />
-              {scoreDialogUser} 님의 점수 기록
+              <Trophy className="w-5 h-5 text-teal-600" />
+              {scoreDialogUser} 님의 라운드 기록
             </DialogTitle>
           </DialogHeader>
-          <div className="mt-4 space-y-4">
+          <div className="mt-4 space-y-6">
             {selectedUserScores === null ? (
-              <div className="flex justify-center py-8">
+              <div className="flex justify-center py-10">
                 <div className="animate-spin rounded-full h-8 w-8 border-2 border-teal-500 border-t-transparent" />
               </div>
             ) : selectedUserScores.length === 0 ? (
-              <div className="text-center py-8 text-slate-500 font-medium">
+              <div className="text-center py-10 text-slate-500 font-medium">
                 등록된 점수 기록이 없습니다.
               </div>
             ) : (
-              <div className="space-y-3">
-                {selectedUserScores.map((score, i) => (
-                  <div key={score.id || i} className="bg-slate-50 rounded-lg p-3 border border-slate-100 flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-bold text-slate-800">{score.date}</div>
-                      {(score.location || score.matchType) && (
-                        <div className="text-[11px] text-slate-500 mt-0.5">
-                          {score.location} {score.location && score.matchType ? "·" : ""} {score.matchType}
-                        </div>
-                      )}
+              <div className="space-y-6">
+                {selectedUserScores.map((game, i) => (
+                  <Card key={game.id || i} className="p-4 shadow-sm border border-slate-100 bg-slate-50/30">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-xs text-slate-500 font-bold">{game.date}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                          그로스(기본): {game.total}타
+                        </span>
+                        {((game.handicap !== undefined && game.handicap > 0) || (game.handicapType === "hole" && game.holes?.some(h => (h.handicap || 0) > 0))) && game.handicapType !== "none" && (
+                          <span className="text-sm font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+                            네트(적용): {game.netScore ?? (game.total - game.handicap)}타 ({
+                              game.handicapType === "total" ? `총합 차감 / HCP ${game.handicap}` :
+                              game.handicapType === "hole" ? `홀별 차감 / HCP ${game.holes?.reduce((acc, h) => acc + (h.handicap || 0), 0) || 0}` :
+                              `둘 다 적용 / HCP ${game.handicap}(총합)+${game.holes?.reduce((acc, h) => acc + (h.handicap || 0), 0) || 0}(홀별)`
+                            })
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-xl font-black text-teal-600">
-                      {score.total}<span className="text-[11px] ml-0.5 font-bold text-slate-400">점</span>
+                    
+                    <div className="text-sm font-bold flex items-center gap-1 mb-3">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400" /> {game.location || "위치 정보 없음"}
                     </div>
-                  </div>
+
+                    {game.stats && (
+                      <div className="flex gap-2 mb-3 text-[11px] font-bold">
+                        <span className="bg-red-50 text-red-600 px-2 py-0.5 rounded">버디 {game.stats.birdies}</span>
+                        <span className="bg-teal-50 text-teal-600 px-2 py-0.5 rounded">파 {game.stats.pars}</span>
+                        <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded">보기 {game.stats.bogeys}</span>
+                      </div>
+                    )}
+
+                    {game.holes && game.holes.length > 0 && (
+                      <div className="text-[10px] sm:text-xs bg-white rounded border overflow-hidden shadow-inner">
+                        {Array.from({ length: Math.ceil(game.holes.length / 9) }).map((_, chunkIndex) => {
+                          const chunkHoles = game.holes!.slice(chunkIndex * 9, (chunkIndex + 1) * 9);
+                          const chunkParTotal = chunkHoles.reduce((sum, h) => sum + (Number(h.par) || 0), 0);
+                          const chunkScoreTotal = chunkHoles.reduce((sum, h) => sum + (Number(h.score) || 0), 0);
+
+                          return (
+                            <div key={chunkIndex} className={`${chunkIndex > 0 ? "border-t" : ""} overflow-x-auto`}>
+                              <table className="w-full text-center border-collapse whitespace-nowrap">
+                                <thead>
+                                  <tr className="bg-slate-50">
+                                    <th className="p-1 sm:p-1.5 border-b border-r text-slate-500 font-normal w-10 sm:w-12">
+                                      {chunkIndex === 0 ? "전반" : "후반"}
+                                    </th>
+                                    {chunkHoles.map(h => (
+                                      <th key={`hole-${h.hole}`} className="p-1 sm:p-1.5 border-b border-r text-slate-500 font-normal min-w-[24px] sm:min-w-[32px]">
+                                        {h.hole}
+                                      </th>
+                                    ))}
+                                    <th className="p-1 sm:p-1.5 border-b text-slate-500 font-normal min-w-[32px]">합</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr>
+                                    <td className="p-1 sm:p-1.5 border-r text-slate-500">Par</td>
+                                    {chunkHoles.map(h => <td key={`par-${h.hole}`} className="p-1 sm:p-1.5 border-r">{h.par}</td>)}
+                                    <td className="p-1 sm:p-1.5 font-bold">{chunkParTotal}</td>
+                                  </tr>
+                                  <tr className="bg-slate-50/50">
+                                    <td className="p-1 sm:p-1.5 border-r text-slate-500 font-bold">오버타</td>
+                                    {chunkHoles.map(h => {
+                                      const parVal = Number(h.par) || 0;
+                                      const grossVal = Number(h.score) || 0;
+                                      const diff = grossVal > 0 && parVal > 0 ? (grossVal - parVal) : 0;
+                                      const displayDiff = diff > 0 ? `+${diff}` : diff === 0 ? "0" : diff;
+                                      return (
+                                        <td key={`over-${h.hole}`} className={`p-1 sm:p-1.5 border-r font-bold ${diff < 0 ? 'text-red-500' : diff > 0 ? 'text-blue-500' : 'text-slate-700'}`}>
+                                          {displayDiff}
+                                        </td>
+                                      );
+                                    })}
+                                    <td className="p-1 sm:p-1.5 font-bold">
+                                      {(() => {
+                                        const diffTotal = chunkHoles.reduce((acc, h) => {
+                                          const parVal = Number(h.par) || 0;
+                                          const grossVal = Number(h.score) || 0;
+                                          if (grossVal === 0 || parVal === 0) return acc;
+                                          return acc + (grossVal - parVal);
+                                        }, 0);
+                                        return diffTotal > 0 ? `+${diffTotal}` : diffTotal;
+                                      })()}
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td className="p-1 sm:p-1.5 border-r text-teal-700 font-bold">총스코어</td>
+                                    {chunkHoles.map(h => (
+                                      <td key={`score-${h.hole}`} className={`p-1 sm:p-1.5 border-r font-bold ${(h.score || 0) < (h.par || 0) ? 'text-red-500' : (h.score || 0) > (h.par || 0) ? 'text-blue-500' : 'text-slate-700'}`}>
+                                        {h.score}
+                                      </td>
+                                    ))}
+                                    <td className="p-1 sm:p-1.5 font-bold text-teal-700">{chunkScoreTotal}</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </Card>
                 ))}
               </div>
             )}
