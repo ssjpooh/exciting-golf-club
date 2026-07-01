@@ -19,7 +19,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogOut, Plus, MapPin, Check } from "lucide-react";
+import { LogOut, Plus, MapPin, Check, Menu } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -843,12 +843,36 @@ function ScoresPage() {
     }
   };
 
+  // Check if current user is super admin email-wise
+  const isSuperAdminEmail = useMemo(() => {
+    if (!user || !user.email) return false;
+    const email = user.email.toLowerCase();
+    return email === "tlsejdzkzk@gmail.com" || email === "tkdwnslpooh@gmail.com";
+  }, [user]);
+
   if (isLoading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
       <header className="bg-white border-b sticky top-0 z-10 px-4 py-3 flex justify-between items-center">
-        <h1 className="font-black text-xl text-teal-600">⛳ 골프 스코어</h1>
+        <div className="flex items-center gap-2">
+          {isSuperAdminEmail && (
+            <div className="relative group">
+              <Button variant="ghost" size="sm" className="p-1 h-8 w-8 hover:bg-slate-100 rounded">
+                <Menu className="w-5 h-5 text-slate-700" />
+              </Button>
+              <div className="absolute left-0 mt-1 w-36 bg-white border rounded-md shadow-lg hidden group-hover:block hover:block z-20">
+                <button
+                  onClick={() => navigate({ to: "/admin/users" })}
+                  className="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 hover:bg-teal-50 hover:text-teal-700 border-b cursor-pointer"
+                >
+                  사용자 전체 보기
+                </button>
+              </div>
+            </div>
+          )}
+          <h1 className="font-black text-xl text-teal-600">⛳ 골프 스코어</h1>
+        </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <span 
