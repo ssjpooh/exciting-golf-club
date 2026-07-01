@@ -752,6 +752,8 @@ function ScoresPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditHandicapOpen, setIsEditHandicapOpen] = useState(false);
   const [tempHandicap, setTempHandicap] = useState<number | "">(0);
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (currentUser) => {
@@ -790,11 +792,18 @@ function ScoresPage() {
   }, [courseId, courseName, isLoading, games]);
 
   const displayGames = useMemo(() => {
+    let filtered = games;
     if (courseId) {
-      return games.filter(g => g.courseId === courseId);
+      filtered = filtered.filter(g => g.courseId === courseId);
     }
-    return games;
-  }, [games, courseId]);
+    if (startDate) {
+      filtered = filtered.filter(g => g.date >= startDate);
+    }
+    if (endDate) {
+      filtered = filtered.filter(g => g.date <= endDate);
+    }
+    return filtered;
+  }, [games, courseId, startDate, endDate]);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -929,6 +938,44 @@ function ScoresPage() {
             <h2 className="text-lg font-bold">이 골프장에서의 이전 기록</h2>
           </div>
         )}
+
+        {/* 기간별 조회 날짜 필터 영역 */}
+        <Card className="p-3 bg-white border border-slate-100 shadow-sm flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-bold">
+              <span>조회 시작</span>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+                className="h-8 py-1 px-2 border w-32 bg-slate-50 text-xs font-bold"
+              />
+            </div>
+            <span className="text-slate-300">~</span>
+            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-bold">
+              <span>조회 종료</span>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={e => setEndDate(e.target.value)}
+                className="h-8 py-1 px-2 border w-32 bg-slate-50 text-xs font-bold"
+              />
+            </div>
+          </div>
+          {(startDate || endDate) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setStartDate("");
+                setEndDate("");
+              }}
+              className="h-8 px-2.5 text-xs font-bold text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-100 rounded self-end sm:self-auto cursor-pointer"
+            >
+              초기화
+            </Button>
+          )}
+        </Card>
 
         <div className="space-y-4">
           {displayGames.map(game => (

@@ -308,9 +308,12 @@ function AdminUsersPage() {
                             </div>
                           ) : (
                             <>
-                              <span className="text-slate-800">
+                              <button
+                                onClick={() => handleViewScoresList(user)}
+                                className="text-slate-800 hover:text-teal-600 hover:underline text-left cursor-pointer transition-colors"
+                              >
                                 {user.nickname || user.email?.split("@")[0] || "회원"}
-                              </span>
+                              </button>
                               <button
                                 onClick={() => {
                                   setEditingUserId(user.uid);
@@ -344,15 +347,6 @@ function AdminUsersPage() {
 
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewScoresList(user)}
-                            className="h-8 text-[11px] font-bold border-teal-100 text-teal-600 hover:bg-teal-50"
-                          >
-                            <Trophy className="w-3 h-3 mr-1" />
-                            점수 보기
-                          </Button>
                           <Select
                             value={user.role}
                             onValueChange={(val: UserRole) => handleRoleChange(user.uid, val)}
