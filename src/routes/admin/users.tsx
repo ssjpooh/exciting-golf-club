@@ -474,8 +474,15 @@ function AdminUsersPage() {
                                       const grossVal = Number(h.score) || 0;
                                       const diff = grossVal > 0 && parVal > 0 ? (grossVal - parVal) : 0;
                                       const displayDiff = diff > 0 ? `+${diff}` : diff === 0 ? "0" : diff;
+                                      
+                                      let textColor = "text-slate-900";
+                                      if (diff < 0) textColor = "text-red-500";
+                                      else if (diff === 0) textColor = "text-teal-600";
+                                      else if (diff === 1) textColor = "text-slate-500";
+                                      else if (diff === parVal && parVal > 0) textColor = "text-blue-500";
+
                                       return (
-                                        <td key={`over-${h.hole}`} className={`p-1 sm:p-1.5 border-r font-bold ${diff < 0 ? 'text-red-500' : diff > 0 ? 'text-blue-500' : 'text-slate-700'}`}>
+                                        <td key={`over-${h.hole}`} className={`p-1 sm:p-1.5 border-r font-bold ${textColor}`}>
                                           {displayDiff}
                                         </td>
                                       );
@@ -494,11 +501,23 @@ function AdminUsersPage() {
                                   </tr>
                                   <tr>
                                     <td className="p-1 sm:p-1.5 border-r text-teal-700 font-bold">총스코어</td>
-                                    {chunkHoles.map(h => (
-                                      <td key={`score-${h.hole}`} className={`p-1 sm:p-1.5 border-r font-bold ${(h.score || 0) < (h.par || 0) ? 'text-red-500' : (h.score || 0) > (h.par || 0) ? 'text-blue-500' : 'text-slate-700'}`}>
-                                        {h.score}
-                                      </td>
-                                    ))}
+                                    {chunkHoles.map(h => {
+                                      const parVal = Number(h.par) || 0;
+                                      const grossVal = Number(h.score) || 0;
+                                      const diff = grossVal > 0 && parVal > 0 ? (grossVal - parVal) : 0;
+                                      
+                                      let textColor = "text-slate-900";
+                                      if (diff < 0) textColor = "text-red-500 font-black";
+                                      else if (diff === 0) textColor = "text-teal-600 font-black";
+                                      else if (diff === 1) textColor = "text-slate-500";
+                                      else if (diff === parVal && parVal > 0) textColor = "text-blue-500 font-black";
+
+                                      return (
+                                        <td key={`score-${h.hole}`} className={`p-1 sm:p-1.5 border-r font-bold ${textColor}`}>
+                                          {h.score}
+                                        </td>
+                                      );
+                                    })}
                                     <td className="p-1 sm:p-1.5 font-bold text-teal-700">{chunkScoreTotal}</td>
                                   </tr>
                                 </tbody>
