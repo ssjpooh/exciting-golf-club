@@ -1125,7 +1125,7 @@ function ScoresPage() {
                   <div className={cardStatsText}>
                     <span className="bg-red-50 text-red-600 px-2 py-1 rounded">버디 {game.stats.birdies}</span>
                     <span className="bg-teal-50 text-teal-600 px-2 py-1 rounded">파 {game.stats.pars}</span>
-                    <span className="bg-slate-100 px-2 py-1 rounded">보기 {game.stats.bogeys}</span>
+                    <span className="bg-amber-50 text-amber-600 px-2 py-1 rounded border border-amber-100">보기 {game.stats.bogeys}</span>
                   </div>
                 )}
                 {game.holes && game.holes.length > 0 && (
