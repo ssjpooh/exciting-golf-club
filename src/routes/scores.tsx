@@ -931,12 +931,13 @@ function ScoresPage() {
             <h2 className="text-lg font-bold flex items-center gap-2 mb-2">
               <MapPin className="text-teal-600 w-5 h-5" /> {courseInfo.name}
             </h2>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button onClick={() => {
                 setEditingScore(null);
                 setIsRecordOpen(true);
               }} className="flex-1 bg-teal-600 hover:bg-teal-700">이 코스로 점수 기록하기</Button>
-              <Button onClick={() => navigate({ to: "/select-course" })} variant="outline" className="flex-1 border-teal-200 text-teal-700 hover:bg-teal-100">골프장 변경</Button>
+              <Button onClick={() => navigate({ to: "/select-course" })} variant="outline" className="flex-1 border-teal-200 text-teal-700 hover:bg-teal-150">골프장 변경</Button>
+              <Button onClick={() => navigate({ to: "/scores" })} variant="secondary" className="flex-1 bg-slate-200 text-slate-800 hover:bg-slate-300">홈으로 (전체기록)</Button>
             </div>
           </Card>
         )}
@@ -968,123 +969,86 @@ function ScoresPage() {
           </div>
         )}
 
-        {/* 기간별 조회 날짜 필터 영역 (모바일 포함 무조건 한 줄 배치 - 텍스트 가독성 최적화) */}
+        {/* 기간별 조회 날짜 필터 영역 (글자 크기에 따른 반응형 2줄 줄바꿈 지원) */}
         {(() => {
-          let filterContainerClass = "p-2 bg-white border border-slate-100 shadow-sm flex items-center justify-between gap-2 overflow-x-auto";
+          let filterContainerClass = "p-2 bg-white border border-slate-100 shadow-sm flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between";
           let labelClass = "text-xs text-slate-500 font-bold";
           let inputClass = "h-8 py-1 px-1.5 border w-[115px] bg-slate-50 text-xs font-bold rounded";
           let btnClass = "h-8 px-2 text-xs font-bold border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100 rounded cursor-pointer shrink-0";
           let resetBtnClass = "h-8 px-2 text-xs font-bold text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-100 rounded cursor-pointer shrink-0";
 
-          // UI text mappings
-          let cardDateText = "text-xs text-slate-500 font-bold";
-          let cardHeaderBadge = "text-sm font-bold bg-slate-100 px-2 py-0.5 rounded text-slate-500";
-          let cardNetBadge = "text-sm font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200";
-          let cardTitle = "text-sm font-bold flex items-center gap-1";
-          let cardStatsText = "flex gap-2 mt-3 text-xs font-bold";
-          let cardTableText = "text-[10px] sm:text-xs";
-          let cardTableHead = "p-1 sm:p-1.5 border-b border-r text-slate-500 font-normal w-10 sm:w-12";
-          let cardTableThHole = "p-1 sm:p-1.5 border-b border-r text-slate-500 font-normal min-w-[24px] sm:min-w-[32px]";
-          let cardTableThTotal = "p-1 sm:p-1.5 border-b text-slate-500 font-normal min-w-[32px]";
-          let cardTableParLabel = "p-1 sm:p-1.5 border-r text-slate-500";
-          let cardTableScoreLabel = "p-1 sm:p-1.5 border-r text-teal-700 font-bold";
-
           if (fontSizePreset === "medium") {
-            filterContainerClass = "p-3 bg-white border border-slate-100 shadow-sm flex items-center justify-between gap-3 overflow-x-auto";
+            filterContainerClass = "p-3 bg-white border border-slate-100 shadow-sm flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between";
             labelClass = "text-sm text-slate-500 font-extrabold";
             inputClass = "h-9 py-1 px-2 border w-[130px] bg-slate-50 text-sm font-bold rounded";
             btnClass = "h-9 px-3 text-sm font-bold border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100 rounded cursor-pointer shrink-0";
             resetBtnClass = "h-9 px-3 text-sm font-bold text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-100 rounded cursor-pointer shrink-0";
-
-            cardDateText = "text-sm text-slate-500 font-extrabold";
-            cardHeaderBadge = "text-base font-bold bg-slate-100 px-2.5 py-1 rounded text-slate-600";
-            cardNetBadge = "text-base font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded border border-teal-200";
-            cardTitle = "text-base font-bold flex items-center gap-1.5";
-            cardStatsText = "flex gap-2.5 mt-3.5 text-sm font-extrabold";
-            cardTableText = "text-xs sm:text-sm";
-            cardTableHead = "p-1.5 border-b border-r text-slate-500 font-bold w-12 sm:w-16";
-            cardTableThHole = "p-1.5 border-b border-r text-slate-500 font-bold min-w-[30px] sm:min-w-[38px]";
-            cardTableThTotal = "p-1.5 border-b text-slate-500 font-bold min-w-[38px]";
-            cardTableParLabel = "p-1.5 border-r text-slate-500 font-bold";
-            cardTableScoreLabel = "p-1.5 border-r text-teal-700 font-black";
           } else if (fontSizePreset === "large") {
-            filterContainerClass = "p-4 bg-white border border-slate-250 shadow-md flex items-center justify-between gap-4 overflow-x-auto";
+            filterContainerClass = "p-4 bg-white border border-slate-250 shadow-md flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between";
             labelClass = "text-base text-slate-600 font-black";
             inputClass = "h-11 py-1.5 px-2 border w-[150px] bg-slate-50 text-base font-bold rounded";
             btnClass = "h-11 px-4 text-base font-bold border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100 rounded cursor-pointer shrink-0";
             resetBtnClass = "h-11 px-4 text-base font-bold text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-100 rounded cursor-pointer shrink-0";
-
-            cardDateText = "text-base text-slate-500 font-black";
-            cardHeaderBadge = "text-lg font-bold bg-slate-100 px-3 py-1.5 rounded text-slate-700";
-            cardNetBadge = "text-lg font-bold text-teal-700 bg-teal-50 px-3 py-1.5 rounded border border-teal-350";
-            cardTitle = "text-lg font-bold flex items-center gap-2";
-            cardStatsText = "flex gap-3 mt-4 text-base font-black";
-            cardTableText = "text-sm sm:text-base";
-            cardTableHead = "p-2 border-b border-r text-slate-600 font-black w-14 sm:w-20";
-            cardTableThHole = "p-2 border-b border-r text-slate-600 font-black min-w-[36px] sm:min-w-[44px]";
-            cardTableThTotal = "p-2 border-b text-slate-600 font-black min-w-[44px]";
-            cardTableParLabel = "p-2 border-r text-slate-500 font-black";
-            cardTableScoreLabel = "p-2 border-r text-teal-700 font-black text-base";
           }
 
           return (
             <Card className={filterContainerClass}>
-              <div className="flex items-center gap-1.5 shrink-0 flex-nowrap w-full justify-between">
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <div className="flex items-center gap-1 text-slate-500 font-bold">
-                    <span className={labelClass}>시작</span>
-                    <Input
-                      type="date"
-                      value={startDate}
-                      onChange={e => setStartDate(e.target.value)}
-                      className={inputClass}
-                    />
-                  </div>
-                  <span className="text-slate-300 text-xs">~</span>
-                  <div className="flex items-center gap-1 text-slate-500 font-bold">
-                    <span className={labelClass}>종료</span>
-                    <Input
-                      type="date"
-                      value={endDate}
-                      onChange={e => setEndDate(e.target.value)}
-                      className={inputClass}
-                    />
-                  </div>
+              {/* 날짜 입력부 (언제나 한 라인 유지) */}
+              <div className="flex items-center gap-1.5 shrink-0 flex-nowrap">
+                <div className="flex items-center gap-1 text-slate-500 font-bold">
+                  <span className={labelClass}>시작</span>
+                  <Input
+                    type="date"
+                    value={startDate}
+                    onChange={e => setStartDate(e.target.value)}
+                    className={inputClass}
+                  />
                 </div>
-                
-                <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-slate-300 text-xs">~</span>
+                <div className="flex items-center gap-1 text-slate-500 font-bold">
+                  <span className={labelClass}>종료</span>
+                  <Input
+                    type="date"
+                    value={endDate}
+                    onChange={e => setEndDate(e.target.value)}
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+              
+              {/* 버튼 조작부 (모바일이나 글자 크기가 커지면 하단 우측 정렬로 2줄화) */}
+              <div className="flex items-center gap-1.5 justify-end w-full sm:w-auto shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setStartDate("");
+                    setEndDate("");
+                  }}
+                  className={btnClass}
+                >
+                  전체
+                </Button>
+                {(startDate !== (() => {
+                  const d = new Date();
+                  d.setFullYear(d.getFullYear() - 1);
+                  return d.toISOString().slice(0, 10);
+                })() || endDate !== new Date().toISOString().slice(0, 10)) && (
                   <Button
-                    type="button"
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
                     onClick={() => {
-                      setStartDate("");
-                      setEndDate("");
+                      const d = new Date();
+                      d.setFullYear(d.getFullYear() - 1);
+                      setStartDate(d.toISOString().slice(0, 10));
+                      setEndDate(new Date().toISOString().slice(0, 10));
                     }}
-                    className={btnClass}
+                    className={resetBtnClass}
                   >
-                    전체
+                    초기화
                   </Button>
-                  {(startDate !== (() => {
-                    const d = new Date();
-                    d.setFullYear(d.getFullYear() - 1);
-                    return d.toISOString().slice(0, 10);
-                  })() || endDate !== new Date().toISOString().slice(0, 10)) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        const d = new Date();
-                        d.setFullYear(d.getFullYear() - 1);
-                        setStartDate(d.toISOString().slice(0, 10));
-                        setEndDate(new Date().toISOString().slice(0, 10));
-                      }}
-                      className={resetBtnClass}
-                    >
-                      초기화
-                    </Button>
-                  )}
-                </div>
+                )}
               </div>
             </Card>
           );
@@ -1194,8 +1158,16 @@ function ScoresPage() {
                                   const grossVal = Number(h.score) || 0;
                                   const diff = grossVal > 0 && parVal > 0 ? (grossVal - parVal) : 0;
                                   const displayDiff = diff > 0 ? `+${diff}` : diff === 0 ? "0" : diff;
+                                  
+                                  // Default is black/dark slate. Match specific highlights: Birdie (red), Par (teal), Bogey (slate), Double Par (blue)
+                                  let textColor = "text-slate-900";
+                                  if (diff < 0) textColor = "text-red-500";
+                                  else if (diff === 0) textColor = "text-teal-600";
+                                  else if (diff === 1) textColor = "text-slate-500";
+                                  else if (diff === parVal && parVal > 0) textColor = "text-blue-500"; // Double Par (양파)
+
                                   return (
-                                    <td key={`over-${h.hole}`} className={`p-1 sm:p-1.5 border-r font-bold ${diff < 0 ? 'text-red-500' : diff > 0 ? 'text-blue-500' : 'text-slate-700'}`}>
+                                    <td key={`over-${h.hole}`} className={`p-1 sm:p-1.5 border-r font-bold ${textColor}`}>
                                       {displayDiff}
                                     </td>
                                   );
@@ -1214,11 +1186,23 @@ function ScoresPage() {
                               </tr>
                               <tr>
                                 <td className="p-1 sm:p-1.5 border-r text-teal-700 font-bold">총스코어</td>
-                                {chunkHoles.map(h => (
-                                  <td key={`score-${h.hole}`} className={`p-1 sm:p-1.5 border-r font-bold ${(h.score || 0) < (h.par || 0) ? 'text-red-500' : (h.score || 0) > (h.par || 0) ? 'text-blue-500' : 'text-slate-700'}`}>
-                                    {h.score}
-                                  </td>
-                                ))}
+                                {chunkHoles.map(h => {
+                                  const parVal = Number(h.par) || 0;
+                                  const grossVal = Number(h.score) || 0;
+                                  const diff = grossVal > 0 && parVal > 0 ? (grossVal - parVal) : 0;
+                                  
+                                  let textColor = "text-slate-900";
+                                  if (diff < 0) textColor = "text-red-500 font-black";
+                                  else if (diff === 0) textColor = "text-teal-600 font-black";
+                                  else if (diff === 1) textColor = "text-slate-500";
+                                  else if (diff === parVal && parVal > 0) textColor = "text-blue-500 font-black"; // Double Par (양파)
+
+                                  return (
+                                    <td key={`score-${h.hole}`} className={`p-1 sm:p-1.5 border-r font-bold ${textColor}`}>
+                                      {h.score}
+                                    </td>
+                                  );
+                                })}
                                 <td className="p-1 sm:p-1.5 font-bold text-teal-700">{chunkScoreTotal}</td>
                               </tr>
                             </tbody>
