@@ -478,7 +478,7 @@ function AdminUsersPage() {
                                       let textColor = "text-slate-900";
                                       if (diff < 0) textColor = "text-red-500";
                                       else if (diff === 0) textColor = "text-teal-600";
-                                      else if (diff === 1) textColor = "text-slate-500";
+                                      else if (diff === 1) textColor = "text-amber-600";
                                       else if (diff === parVal && parVal > 0) textColor = "text-blue-500";
 
                                       return (
@@ -509,7 +509,7 @@ function AdminUsersPage() {
                                       let textColor = "text-slate-900";
                                       if (diff < 0) textColor = "text-red-500 font-black";
                                       else if (diff === 0) textColor = "text-teal-600 font-black";
-                                      else if (diff === 1) textColor = "text-slate-500";
+                                      else if (diff === 1) textColor = "text-amber-600";
                                       else if (diff === parVal && parVal > 0) textColor = "text-blue-500 font-black";
 
                                       return (

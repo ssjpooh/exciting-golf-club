@@ -1159,11 +1159,11 @@ function ScoresPage() {
                                   const diff = grossVal > 0 && parVal > 0 ? (grossVal - parVal) : 0;
                                   const displayDiff = diff > 0 ? `+${diff}` : diff === 0 ? "0" : diff;
                                   
-                                  // Default is black/dark slate. Match specific highlights: Birdie (red), Par (teal), Bogey (slate), Double Par (blue)
+                                  // Default is black/dark slate. Match specific highlights: Birdie (red), Par (teal), Bogey (amber), Double Par (blue)
                                   let textColor = "text-slate-900";
                                   if (diff < 0) textColor = "text-red-500";
                                   else if (diff === 0) textColor = "text-teal-600";
-                                  else if (diff === 1) textColor = "text-slate-500";
+                                  else if (diff === 1) textColor = "text-amber-600"; // Bogey
                                   else if (diff === parVal && parVal > 0) textColor = "text-blue-500"; // Double Par (양파)
 
                                   return (
@@ -1194,7 +1194,7 @@ function ScoresPage() {
                                   let textColor = "text-slate-900";
                                   if (diff < 0) textColor = "text-red-500 font-black";
                                   else if (diff === 0) textColor = "text-teal-600 font-black";
-                                  else if (diff === 1) textColor = "text-slate-500";
+                                  else if (diff === 1) textColor = "text-amber-600"; // Bogey
                                   else if (diff === parVal && parVal > 0) textColor = "text-blue-500 font-black"; // Double Par (양파)
 
                                   return (
