@@ -963,26 +963,28 @@ function ScoresPage() {
           </div>
         )}
 
-        {/* 기간별 조회 날짜 필터 영역 */}
-        <Card className="p-3 bg-white border border-slate-100 shadow-sm flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-bold">
-              <span>조회 시작</span>
+        {/* 기간별 조회 날짜 필터 영역 (모바일 포함 무조건 한 줄 배치) */}
+        <Card className="p-1.5 bg-white border border-slate-100 shadow-sm flex items-center justify-between gap-1 overflow-x-auto">
+          <div className="flex items-center gap-1 shrink-0 flex-nowrap">
+            <div className="flex items-center gap-1 text-[10px] text-slate-500 font-bold">
+              <span className="hidden sm:inline">조회</span>
+              <span>시작</span>
               <Input
                 type="date"
                 value={startDate}
                 onChange={e => setStartDate(e.target.value)}
-                className="h-8 py-1 px-2 border w-32 bg-slate-50 text-xs font-bold"
+                className="h-7 py-0.5 px-1.5 border w-[100px] bg-slate-50 text-[10px] font-bold rounded"
               />
             </div>
-            <span className="text-slate-300">~</span>
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-bold">
-              <span>조회 종료</span>
+            <span className="text-slate-300 text-xs">~</span>
+            <div className="flex items-center gap-1 text-[10px] text-slate-500 font-bold">
+              <span className="hidden sm:inline">조회</span>
+              <span>종료</span>
               <Input
                 type="date"
                 value={endDate}
                 onChange={e => setEndDate(e.target.value)}
-                className="h-8 py-1 px-2 border w-32 bg-slate-50 text-xs font-bold"
+                className="h-7 py-0.5 px-1.5 border w-[100px] bg-slate-50 text-[10px] font-bold rounded"
               />
             </div>
             <Button
@@ -993,9 +995,9 @@ function ScoresPage() {
                 setStartDate("");
                 setEndDate("");
               }}
-              className="h-8 px-2.5 text-xs font-bold border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100 rounded cursor-pointer"
+              className="h-7 px-1.5 text-[10px] font-bold border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100 rounded cursor-pointer shrink-0"
             >
-              전체 보기
+              전체
             </Button>
           </div>
           {(startDate !== (() => {
@@ -1012,7 +1014,7 @@ function ScoresPage() {
                 setStartDate(d.toISOString().slice(0, 10));
                 setEndDate(new Date().toISOString().slice(0, 10));
               }}
-              className="h-8 px-2.5 text-xs font-bold text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-100 rounded self-end sm:self-auto cursor-pointer"
+              className="h-7 px-1.5 text-[10px] font-bold text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-100 rounded cursor-pointer shrink-0"
             >
               초기화
             </Button>
