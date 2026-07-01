@@ -1126,6 +1126,17 @@ function ScoresPage() {
                     <span className="bg-red-50 text-red-600 px-2 py-1 rounded">버디 {game.stats.birdies}</span>
                     <span className="bg-teal-50 text-teal-600 px-2 py-1 rounded">파 {game.stats.pars}</span>
                     <span className="bg-amber-50 text-amber-600 px-2 py-1 rounded border border-amber-100">보기 {game.stats.bogeys}</span>
+                    {/* 양파 갯수 실시간 계산 배지 추가 */}
+                    {(() => {
+                      const doublePars = game.holes?.filter(h => {
+                        const parVal = Number(h.par) || 0;
+                        const scoreVal = Number(h.score) || 0;
+                        return parVal > 0 && (scoreVal - parVal) === parVal;
+                      }).length || 0;
+                      return (
+                        <span className="bg-blue-50 text-blue-600 px-2 py-1 rounded border border-blue-100">양파 {doublePars}</span>
+                      );
+                    })()}
                   </div>
                 )}
                 {game.holes && game.holes.length > 0 && (
