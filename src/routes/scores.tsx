@@ -53,6 +53,7 @@ function RecordRoundDialog({
   onDelete,
   defaultHandicap = 0,
   initialData,
+  fontSizePreset,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -61,6 +62,7 @@ function RecordRoundDialog({
   onDelete?: (scoreId: string) => void;
   defaultHandicap?: number;
   initialData?: Score | null;
+  fontSizePreset: 'normal' | 'medium' | 'large';
 }) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [location, setLocation] = useState(courseInfo?.name || "");
@@ -72,7 +74,6 @@ function RecordRoundDialog({
   const [isNewCourse, setIsNewCourse] = useState(false);
   const [tempHoleCount, setTempHoleCount] = useState<number>(18);
   const [setupStep, setSetupStep] = useState<'choose_holes' | 'scorecard'>('scorecard');
-  const [fontSizePreset, setFontSizePreset] = useState<'normal' | 'medium' | 'large'>('normal');
 
   useEffect(() => {
     if (open) {
@@ -550,19 +551,7 @@ function RecordRoundDialog({
                 </ul>
               </div>
 
-              {/* 글자 크기 선택 조절 바 */}
-              <div className="flex items-center justify-end gap-2 bg-slate-50 border p-2.5 rounded-lg">
-                <Label className="text-xs font-extrabold text-slate-600">글자 크기 조절:</Label>
-                <select
-                  value={fontSizePreset}
-                  onChange={e => setFontSizePreset(e.target.value as any)}
-                  className="flex h-8 w-28 rounded-md border border-input bg-white px-2 py-1 text-xs font-bold shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  <option value="normal">보통</option>
-                  <option value="medium">조금 크게</option>
-                  <option value="large">크게</option>
-                </select>
-              </div>
+
 
               {/* Dynamic Sizing mapping derived from fontSizePreset */}
               {(() => {
@@ -759,6 +748,7 @@ function ScoresPage() {
   });
   const [endDate, setEndDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
+  const [fontSizePreset, setFontSizePreset] = useState<'normal' | 'medium' | 'large'>('normal');
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (currentUser) => {
@@ -952,9 +942,24 @@ function ScoresPage() {
         )}
 
         {!courseId && (
-          <div className="flex justify-between items-center">
-            <h2 className="text-lg font-bold">내 라운드 기록</h2>
-            <Button onClick={() => navigate({ to: "/select-course" })} className="bg-teal-600"><Plus className="w-4 h-4 mr-1"/>기록 추가</Button>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-bold">내 라운드 기록</h2>
+              <Button onClick={() => navigate({ to: "/select-course" })} className="bg-teal-600"><Plus className="w-4 h-4 mr-1"/>기록 추가</Button>
+            </div>
+            {/* 글자 크기 선택 조절 바 (타이틀/기록추가 아래 배치) */}
+            <div className="flex items-center justify-end gap-1.5 bg-slate-50 border p-2 rounded-lg">
+              <Label className="text-xs font-extrabold text-slate-600">입력 창 글자 크기:</Label>
+              <select
+                value={fontSizePreset}
+                onChange={e => setFontSizePreset(e.target.value as any)}
+                className="flex h-7 w-24 rounded border border-input bg-white px-2 py-0.5 text-xs font-bold shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
+              >
+                <option value="normal">보통</option>
+                <option value="medium">중간</option>
+                <option value="large">크게</option>
+              </select>
+            </div>
           </div>
         )}
         {courseId && (
@@ -1139,6 +1144,7 @@ function ScoresPage() {
         onSave={handleSaveScore} 
         onDelete={handleDeleteScore}
         defaultHandicap={profile?.handicap !== undefined ? profile.handicap : (games.length > 0 ? (games[0].handicap ?? 0) : 0)}
+        fontSizePreset={fontSizePreset}
       />
 
       <Dialog open={isEditHandicapOpen} onOpenChange={setIsEditHandicapOpen}>
