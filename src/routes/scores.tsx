@@ -967,7 +967,32 @@ function ScoresPage() {
                               <td className="p-1 sm:p-1.5 font-bold">{chunkParTotal}</td>
                             </tr>
                             <tr className="bg-slate-50/50">
-                              <td className="p-1 sm:p-1.5 border-r text-teal-700 font-bold">Score</td>
+                              <td className="p-1 sm:p-1.5 border-r text-slate-500 font-bold">오버타</td>
+                              {chunkHoles.map(h => {
+                                const parVal = Number(h.par) || 0;
+                                const grossVal = Number(h.score) || 0;
+                                const diff = grossVal > 0 && parVal > 0 ? (grossVal - parVal) : 0;
+                                const displayDiff = diff > 0 ? `+${diff}` : diff === 0 ? "0" : diff;
+                                return (
+                                  <td key={`over-${h.hole}`} className={`p-1 sm:p-1.5 border-r font-bold ${diff < 0 ? 'text-red-500' : diff > 0 ? 'text-blue-500' : 'text-slate-700'}`}>
+                                    {displayDiff}
+                                  </td>
+                                );
+                              })}
+                              <td className="p-1 sm:p-1.5 font-bold">
+                                {(() => {
+                                  const diffTotal = chunkHoles.reduce((acc, h) => {
+                                    const parVal = Number(h.par) || 0;
+                                    const grossVal = Number(h.score) || 0;
+                                    if (grossVal === 0 || parVal === 0) return acc;
+                                    return acc + (grossVal - parVal);
+                                  }, 0);
+                                  return diffTotal > 0 ? `+${diffTotal}` : diffTotal;
+                                })()}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="p-1 sm:p-1.5 border-r text-teal-700 font-bold">총스코어</td>
                               {chunkHoles.map(h => (
                                 <td key={`score-${h.hole}`} className={`p-1 sm:p-1.5 border-r font-bold ${(h.score || 0) < (h.par || 0) ? 'text-red-500' : (h.score || 0) > (h.par || 0) ? 'text-blue-500' : 'text-slate-700'}`}>
                                   {h.score}

@@ -182,12 +182,15 @@ export async function deleteSavedScore(scoreId: string, userId: string) {
 
 export function sortScoresDesc(scores: Score[]): Score[] {
   return scores.sort((a, b) => {
-    const timeA = (a.createdAt as any)?.seconds || new Date(a.date).getTime() / 1000;
-    const timeB = (b.createdAt as any)?.seconds || new Date(b.date).getTime() / 1000;
-    if (timeA !== timeB) {
-      return timeB - timeA;
+    // Sort by date (YYYY-MM-DD) descending first
+    const dateCompare = b.date.localeCompare(a.date);
+    if (dateCompare !== 0) {
+      return dateCompare;
     }
-    return b.date.localeCompare(a.date);
+    // If dates are same, fallback to createdAt timestamp descending
+    const timeA = (a.createdAt as any)?.seconds || 0;
+    const timeB = (b.createdAt as any)?.seconds || 0;
+    return timeB - timeA;
   });
 }
 
