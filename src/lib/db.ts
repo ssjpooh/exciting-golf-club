@@ -347,6 +347,11 @@ export async function createOrUpdateUser(user: {
       lastLoginAt: serverTimestamp(),
     };
 
+    // 카카오/네이버 등 메일 정보가 비어있었거나 갱신되었을 때 항상 메일 주소 최신화 보장
+    if (user.email && existingData.email !== user.email) {
+      updateData.email = user.email;
+    }
+
     if (isTargetAdmin && existingData.role !== "super_admin") {
       updateData.role = "super_admin";
     }

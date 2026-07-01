@@ -336,11 +336,7 @@ function AdminUsersPage() {
                           <span className="text-[10px] font-bold uppercase tracking-tight text-slate-500">
                             {user.role === "super_admin"
                               ? "슈퍼 관리자"
-                              : user.role === "master"
-                                ? "클럽장"
-                                : user.role === "staff"
-                                  ? "운영진"
-                                  : "클럽원"}
+                              : "사용자"}
                           </span>
                         </div>
                       </TableCell>
@@ -360,9 +356,7 @@ function AdminUsersPage() {
                               {currentUserProfile?.role === "super_admin" && (
                                 <SelectItem value="super_admin">슈퍼 관리자</SelectItem>
                               )}
-                              <SelectItem value="master">클럽장</SelectItem>
-                              <SelectItem value="staff">운영진</SelectItem>
-                              <SelectItem value="member">클럽원</SelectItem>
+                              <SelectItem value="member">사용자</SelectItem>
                             </SelectContent>
                           </Select>
                           <Button
