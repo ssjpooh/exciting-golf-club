@@ -937,7 +937,7 @@ function ScoresPage() {
                 setIsRecordOpen(true);
               }} className="flex-1 bg-teal-600 hover:bg-teal-700">이 코스로 점수 기록하기</Button>
               <Button onClick={() => navigate({ to: "/select-course" })} variant="outline" className="flex-1 border-teal-200 text-teal-700 hover:bg-teal-150">골프장 변경</Button>
-              <Button onClick={() => navigate({ to: "/scores" })} variant="secondary" className="flex-1 bg-slate-200 text-slate-800 hover:bg-slate-300">홈으로 (전체기록)</Button>
+              <Button onClick={() => navigate({ to: "/scores", search: {} })} variant="secondary" className="flex-1 bg-slate-200 text-slate-800 hover:bg-slate-300">홈으로 (전체기록)</Button>
             </div>
           </Card>
         )}
