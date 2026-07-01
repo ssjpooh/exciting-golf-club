@@ -969,164 +969,268 @@ function ScoresPage() {
         )}
 
         {/* 기간별 조회 날짜 필터 영역 (모바일 포함 무조건 한 줄 배치 - 텍스트 가독성 최적화) */}
-        <Card className="p-2 bg-white border border-slate-100 shadow-sm flex items-center justify-between gap-1 overflow-x-auto">
-          <div className="flex items-center gap-1.5 shrink-0 flex-nowrap">
-            <div className="flex items-center gap-1 text-xs text-slate-500 font-bold">
-              <span>시작</span>
-              <Input
-                type="date"
-                value={startDate}
-                onChange={e => setStartDate(e.target.value)}
-                className="h-8 py-1 px-1.5 border w-[115px] bg-slate-50 text-xs font-bold rounded"
-              />
-            </div>
-            <span className="text-slate-300 text-xs">~</span>
-            <div className="flex items-center gap-1 text-xs text-slate-500 font-bold">
-              <span>종료</span>
-              <Input
-                type="date"
-                value={endDate}
-                onChange={e => setEndDate(e.target.value)}
-                className="h-8 py-1 px-1.5 border w-[115px] bg-slate-50 text-xs font-bold rounded"
-              />
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setStartDate("");
-                setEndDate("");
-              }}
-              className="h-8 px-2 text-xs font-bold border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100 rounded cursor-pointer shrink-0"
-            >
-              전체
-            </Button>
-          </div>
-          {(startDate !== (() => {
-            const d = new Date();
-            d.setFullYear(d.getFullYear() - 1);
-            return d.toISOString().slice(0, 10);
-          })() || endDate !== new Date().toISOString().slice(0, 10)) && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                const d = new Date();
-                d.setFullYear(d.getFullYear() - 1);
-                setStartDate(d.toISOString().slice(0, 10));
-                setEndDate(new Date().toISOString().slice(0, 10));
-              }}
-              className="h-8 px-2 text-xs font-bold text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-100 rounded cursor-pointer shrink-0"
-            >
-              초기화
-            </Button>
-          )}
-        </Card>
+        {(() => {
+          let filterContainerClass = "p-2 bg-white border border-slate-100 shadow-sm flex items-center justify-between gap-2 overflow-x-auto";
+          let labelClass = "text-xs text-slate-500 font-bold";
+          let inputClass = "h-8 py-1 px-1.5 border w-[115px] bg-slate-50 text-xs font-bold rounded";
+          let btnClass = "h-8 px-2 text-xs font-bold border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100 rounded cursor-pointer shrink-0";
+          let resetBtnClass = "h-8 px-2 text-xs font-bold text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-100 rounded cursor-pointer shrink-0";
 
-        <div className="space-y-4">
-          {displayGames.map(game => (
-            <Card 
-              key={game.id} 
-              className="p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer border hover:border-teal-300"
-              onClick={() => {
-                setEditingScore(game);
-                setIsRecordOpen(true);
-              }}
-            >
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-xs text-slate-500 font-bold">{game.date}</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-                    그로스(기본): {game.total}타
-                  </span>
-                  {((game.handicap !== undefined && game.handicap > 0) || (game.handicapType === "hole" && game.holes?.some(h => (h.handicap || 0) > 0))) && game.handicapType !== "none" && (
-                    <span className="text-sm font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
-                      네트(적용): {game.netScore ?? (game.total - game.handicap)}타 ({
-                        game.handicapType === "total" ? `총합 차감 / HCP ${game.handicap}` :
-                        game.handicapType === "hole" ? `홀별 차감 / HCP ${game.holes?.reduce((acc, h) => acc + (h.handicap || 0), 0) || 0}` :
-                        `둘 다 적용 / HCP ${game.handicap}(총합)+${game.holes?.reduce((acc, h) => acc + (h.handicap || 0), 0) || 0}(홀별)`
-                      })
-                    </span>
+          // UI text mappings
+          let cardDateText = "text-xs text-slate-500 font-bold";
+          let cardHeaderBadge = "text-sm font-bold bg-slate-100 px-2 py-0.5 rounded text-slate-500";
+          let cardNetBadge = "text-sm font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200";
+          let cardTitle = "text-sm font-bold flex items-center gap-1";
+          let cardStatsText = "flex gap-2 mt-3 text-xs font-bold";
+          let cardTableText = "text-[10px] sm:text-xs";
+          let cardTableHead = "p-1 sm:p-1.5 border-b border-r text-slate-500 font-normal w-10 sm:w-12";
+          let cardTableThHole = "p-1 sm:p-1.5 border-b border-r text-slate-500 font-normal min-w-[24px] sm:min-w-[32px]";
+          let cardTableThTotal = "p-1 sm:p-1.5 border-b text-slate-500 font-normal min-w-[32px]";
+          let cardTableParLabel = "p-1 sm:p-1.5 border-r text-slate-500";
+          let cardTableScoreLabel = "p-1 sm:p-1.5 border-r text-teal-700 font-bold";
+
+          if (fontSizePreset === "medium") {
+            filterContainerClass = "p-3 bg-white border border-slate-100 shadow-sm flex items-center justify-between gap-3 overflow-x-auto";
+            labelClass = "text-sm text-slate-500 font-extrabold";
+            inputClass = "h-9 py-1 px-2 border w-[130px] bg-slate-50 text-sm font-bold rounded";
+            btnClass = "h-9 px-3 text-sm font-bold border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100 rounded cursor-pointer shrink-0";
+            resetBtnClass = "h-9 px-3 text-sm font-bold text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-100 rounded cursor-pointer shrink-0";
+
+            cardDateText = "text-sm text-slate-500 font-extrabold";
+            cardHeaderBadge = "text-base font-bold bg-slate-100 px-2.5 py-1 rounded text-slate-600";
+            cardNetBadge = "text-base font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded border border-teal-200";
+            cardTitle = "text-base font-bold flex items-center gap-1.5";
+            cardStatsText = "flex gap-2.5 mt-3.5 text-sm font-extrabold";
+            cardTableText = "text-xs sm:text-sm";
+            cardTableHead = "p-1.5 border-b border-r text-slate-500 font-bold w-12 sm:w-16";
+            cardTableThHole = "p-1.5 border-b border-r text-slate-500 font-bold min-w-[30px] sm:min-w-[38px]";
+            cardTableThTotal = "p-1.5 border-b text-slate-500 font-bold min-w-[38px]";
+            cardTableParLabel = "p-1.5 border-r text-slate-500 font-bold";
+            cardTableScoreLabel = "p-1.5 border-r text-teal-700 font-black";
+          } else if (fontSizePreset === "large") {
+            filterContainerClass = "p-4 bg-white border border-slate-250 shadow-md flex items-center justify-between gap-4 overflow-x-auto";
+            labelClass = "text-base text-slate-600 font-black";
+            inputClass = "h-11 py-1.5 px-2 border w-[150px] bg-slate-50 text-base font-bold rounded";
+            btnClass = "h-11 px-4 text-base font-bold border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100 rounded cursor-pointer shrink-0";
+            resetBtnClass = "h-11 px-4 text-base font-bold text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-100 rounded cursor-pointer shrink-0";
+
+            cardDateText = "text-base text-slate-500 font-black";
+            cardHeaderBadge = "text-lg font-bold bg-slate-100 px-3 py-1.5 rounded text-slate-700";
+            cardNetBadge = "text-lg font-bold text-teal-700 bg-teal-50 px-3 py-1.5 rounded border border-teal-350";
+            cardTitle = "text-lg font-bold flex items-center gap-2";
+            cardStatsText = "flex gap-3 mt-4 text-base font-black";
+            cardTableText = "text-sm sm:text-base";
+            cardTableHead = "p-2 border-b border-r text-slate-600 font-black w-14 sm:w-20";
+            cardTableThHole = "p-2 border-b border-r text-slate-600 font-black min-w-[36px] sm:min-w-[44px]";
+            cardTableThTotal = "p-2 border-b text-slate-600 font-black min-w-[44px]";
+            cardTableParLabel = "p-2 border-r text-slate-500 font-black";
+            cardTableScoreLabel = "p-2 border-r text-teal-700 font-black text-base";
+          }
+
+          return (
+            <Card className={filterContainerClass}>
+              <div className="flex items-center gap-1.5 shrink-0 flex-nowrap w-full justify-between">
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-1 text-slate-500 font-bold">
+                    <span className={labelClass}>시작</span>
+                    <Input
+                      type="date"
+                      value={startDate}
+                      onChange={e => setStartDate(e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+                  <span className="text-slate-300 text-xs">~</span>
+                  <div className="flex items-center gap-1 text-slate-500 font-bold">
+                    <span className={labelClass}>종료</span>
+                    <Input
+                      type="date"
+                      value={endDate}
+                      onChange={e => setEndDate(e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setStartDate("");
+                      setEndDate("");
+                    }}
+                    className={btnClass}
+                  >
+                    전체
+                  </Button>
+                  {(startDate !== (() => {
+                    const d = new Date();
+                    d.setFullYear(d.getFullYear() - 1);
+                    return d.toISOString().slice(0, 10);
+                  })() || endDate !== new Date().toISOString().slice(0, 10)) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const d = new Date();
+                        d.setFullYear(d.getFullYear() - 1);
+                        setStartDate(d.toISOString().slice(0, 10));
+                        setEndDate(new Date().toISOString().slice(0, 10));
+                      }}
+                      className={resetBtnClass}
+                    >
+                      초기화
+                    </Button>
                   )}
                 </div>
               </div>
-              <div className="text-sm font-bold flex items-center gap-1">
-                <MapPin className="w-3 h-3 text-slate-400" /> {game.location || "위치 정보 없음"}
-              </div>
-              {game.stats && (
-                <div className="flex gap-2 mt-3 text-xs">
-                  <span className="bg-red-50 text-red-600 px-2 py-1 rounded">버디 {game.stats.birdies}</span>
-                  <span className="bg-teal-50 text-teal-600 px-2 py-1 rounded">파 {game.stats.pars}</span>
-                  <span className="bg-slate-100 px-2 py-1 rounded">보기 {game.stats.bogeys}</span>
-                </div>
-              )}
-              {game.holes && game.holes.length > 0 && (
-                <div className="mt-3 text-[10px] sm:text-xs bg-white rounded border overflow-hidden">
-                  {Array.from({ length: Math.ceil(game.holes.length / 9) }).map((_, chunkIndex) => {
-                    const chunkHoles = game.holes!.slice(chunkIndex * 9, (chunkIndex + 1) * 9);
-                    const chunkParTotal = chunkHoles.reduce((sum, h) => sum + (Number(h.par) || 0), 0);
-                    const chunkScoreTotal = chunkHoles.reduce((sum, h) => sum + (Number(h.score) || 0), 0);
-
-                    return (
-                      <div key={chunkIndex} className={`${chunkIndex > 0 ? "border-t" : ""} overflow-x-auto`}>
-                        <table className="w-full text-center border-collapse whitespace-nowrap">
-                          <thead>
-                            <tr className="bg-slate-50">
-                              <th className="p-1 sm:p-1.5 border-b border-r text-slate-500 font-normal w-10 sm:w-12">{chunkIndex === 0 ? "전반" : "후반"}</th>
-                              {chunkHoles.map(h => <th key={`hole-${h.hole}`} className="p-1 sm:p-1.5 border-b border-r text-slate-500 font-normal min-w-[24px] sm:min-w-[32px]">{h.hole}</th>)}
-                              <th className="p-1 sm:p-1.5 border-b text-slate-500 font-normal min-w-[32px]">합</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr>
-                              <td className="p-1 sm:p-1.5 border-r text-slate-500">Par</td>
-                              {chunkHoles.map(h => <td key={`par-${h.hole}`} className="p-1 sm:p-1.5 border-r">{h.par}</td>)}
-                              <td className="p-1 sm:p-1.5 font-bold">{chunkParTotal}</td>
-                            </tr>
-                            <tr className="bg-slate-50/50">
-                              <td className="p-1 sm:p-1.5 border-r text-slate-500 font-bold">오버타</td>
-                              {chunkHoles.map(h => {
-                                const parVal = Number(h.par) || 0;
-                                const grossVal = Number(h.score) || 0;
-                                const diff = grossVal > 0 && parVal > 0 ? (grossVal - parVal) : 0;
-                                const displayDiff = diff > 0 ? `+${diff}` : diff === 0 ? "0" : diff;
-                                return (
-                                  <td key={`over-${h.hole}`} className={`p-1 sm:p-1.5 border-r font-bold ${diff < 0 ? 'text-red-500' : diff > 0 ? 'text-blue-500' : 'text-slate-700'}`}>
-                                    {displayDiff}
-                                  </td>
-                                );
-                              })}
-                              <td className="p-1 sm:p-1.5 font-bold">
-                                {(() => {
-                                  const diffTotal = chunkHoles.reduce((acc, h) => {
-                                    const parVal = Number(h.par) || 0;
-                                    const grossVal = Number(h.score) || 0;
-                                    if (grossVal === 0 || parVal === 0) return acc;
-                                    return acc + (grossVal - parVal);
-                                  }, 0);
-                                  return diffTotal > 0 ? `+${diffTotal}` : diffTotal;
-                                })()}
-                              </td>
-                            </tr>
-                            <tr>
-                              <td className="p-1 sm:p-1.5 border-r text-teal-700 font-bold">총스코어</td>
-                              {chunkHoles.map(h => (
-                                <td key={`score-${h.hole}`} className={`p-1 sm:p-1.5 border-r font-bold ${(h.score || 0) < (h.par || 0) ? 'text-red-500' : (h.score || 0) > (h.par || 0) ? 'text-blue-500' : 'text-slate-700'}`}>
-                                  {h.score}
-                                </td>
-                              ))}
-                              <td className="p-1 sm:p-1.5 font-bold text-teal-700">{chunkScoreTotal}</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
             </Card>
-          ))}
+          );
+        })()}
+
+        <div className="space-y-4">
+          {displayGames.map(game => {
+            // Apply font size presets inside the game cards
+            let cardDateText = "text-xs text-slate-500 font-bold";
+            let cardHeaderBadge = "text-sm font-bold bg-slate-100 px-2 py-0.5 rounded text-slate-500";
+            let cardNetBadge = "text-sm font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200";
+            let cardTitle = "text-sm font-bold flex items-center gap-1";
+            let cardStatsText = "flex gap-2 mt-3 text-xs";
+            let cardTableText = "text-[10px] sm:text-xs";
+            let cardTableHead = "p-1 sm:p-1.5 border-b border-r text-slate-500 font-normal w-10 sm:w-12";
+            let cardTableThHole = "p-1 sm:p-1.5 border-b border-r text-slate-500 font-normal min-w-[24px] sm:min-w-[32px]";
+            let cardTableThTotal = "p-1 sm:p-1.5 border-b text-slate-500 font-normal min-w-[32px]";
+            let cardTableParLabel = "p-1 sm:p-1.5 border-r text-slate-500";
+
+            if (fontSizePreset === "medium") {
+              cardDateText = "text-sm text-slate-500 font-extrabold";
+              cardHeaderBadge = "text-base font-bold bg-slate-100 px-2.5 py-1 rounded text-slate-600";
+              cardNetBadge = "text-base font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded border border-teal-200";
+              cardTitle = "text-base font-bold flex items-center gap-1.5";
+              cardStatsText = "flex gap-2.5 mt-3.5 text-sm font-extrabold";
+              cardTableText = "text-xs sm:text-sm";
+              cardTableHead = "p-1.5 border-b border-r text-slate-500 font-bold w-12 sm:w-16";
+              cardTableThHole = "p-1.5 border-b border-r text-slate-500 font-bold min-w-[30px] sm:min-w-[38px]";
+              cardTableThTotal = "p-1.5 border-b text-slate-500 font-bold min-w-[38px]";
+              cardTableParLabel = "p-1.5 border-r text-slate-500 font-bold";
+            } else if (fontSizePreset === "large") {
+              cardDateText = "text-base text-slate-500 font-black";
+              cardHeaderBadge = "text-lg font-bold bg-slate-100 px-3 py-1.5 rounded text-slate-700";
+              cardNetBadge = "text-lg font-bold text-teal-700 bg-teal-50 px-3 py-1.5 rounded border border-teal-350";
+              cardTitle = "text-lg font-bold flex items-center gap-2";
+              cardStatsText = "flex gap-3 mt-4 text-base font-black";
+              cardTableText = "text-sm sm:text-base";
+              cardTableHead = "p-2 border-b border-r text-slate-600 font-black w-14 sm:w-20";
+              cardTableThHole = "p-2 border-b border-r text-slate-600 font-black min-w-[36px] sm:min-w-[44px]";
+              cardTableThTotal = "p-2 border-b text-slate-600 font-black min-w-[44px]";
+              cardTableParLabel = "p-2 border-r text-slate-500 font-black";
+            }
+
+            return (
+              <Card 
+                key={game.id} 
+                className="p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer border hover:border-teal-300"
+                onClick={() => {
+                  setEditingScore(game);
+                  setIsRecordOpen(true);
+                }}
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <span className={cardDateText}>{game.date}</span>
+                  <div className="flex items-center gap-2">
+                    <span className={cardHeaderBadge}>
+                      그로스(기본): {game.total}타
+                    </span>
+                    {((game.handicap !== undefined && game.handicap > 0) || (game.handicapType === "hole" && game.holes?.some(h => (h.handicap || 0) > 0))) && game.handicapType !== "none" && (
+                      <span className={cardNetBadge}>
+                        네트(적용): {game.netScore ?? (game.total - game.handicap)}타 ({
+                          game.handicapType === "total" ? `총합 차감 / HCP ${game.handicap}` :
+                          game.handicapType === "hole" ? `홀별 차감 / HCP ${game.holes?.reduce((acc, h) => acc + (h.handicap || 0), 0) || 0}` :
+                          `둘 다 적용 / HCP ${game.handicap}(총합)+${game.holes?.reduce((acc, h) => acc + (h.handicap || 0), 0) || 0}(홀별)`
+                        })
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className={cardTitle}>
+                  <MapPin className="w-3.5 h-3.5 text-slate-400" /> {game.location || "위치 정보 없음"}
+                </div>
+                {game.stats && (
+                  <div className={cardStatsText}>
+                    <span className="bg-red-50 text-red-600 px-2 py-1 rounded">버디 {game.stats.birdies}</span>
+                    <span className="bg-teal-50 text-teal-600 px-2 py-1 rounded">파 {game.stats.pars}</span>
+                    <span className="bg-slate-100 px-2 py-1 rounded">보기 {game.stats.bogeys}</span>
+                  </div>
+                )}
+                {game.holes && game.holes.length > 0 && (
+                  <div className={`mt-3 bg-white rounded border overflow-hidden ${cardTableText}`}>
+                    {Array.from({ length: Math.ceil(game.holes.length / 9) }).map((_, chunkIndex) => {
+                      const chunkHoles = game.holes!.slice(chunkIndex * 9, (chunkIndex + 1) * 9);
+                      const chunkParTotal = chunkHoles.reduce((sum, h) => sum + (Number(h.par) || 0), 0);
+                      const chunkScoreTotal = chunkHoles.reduce((sum, h) => sum + (Number(h.score) || 0), 0);
+
+                      return (
+                        <div key={chunkIndex} className={`${chunkIndex > 0 ? "border-t" : ""} overflow-x-auto`}>
+                          <table className="w-full text-center border-collapse whitespace-nowrap">
+                            <thead>
+                              <tr className="bg-slate-50">
+                                <th className={cardTableHead}>{chunkIndex === 0 ? "전반" : "후반"}</th>
+                                {chunkHoles.map(h => <th key={`hole-${h.hole}`} className={cardTableThHole}>{h.hole}</th>)}
+                                <th className={cardTableThTotal}>합</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className={cardTableParLabel}>Par</td>
+                                {chunkHoles.map(h => <td key={`par-${h.hole}`} className="p-1 sm:p-1.5 border-r">{h.par}</td>)}
+                                <td className="p-1 sm:p-1.5 font-bold">{chunkParTotal}</td>
+                              </tr>
+                              <tr className="bg-slate-50/50">
+                                <td className="p-1 sm:p-1.5 border-r text-slate-500 font-bold">오버타</td>
+                                {chunkHoles.map(h => {
+                                  const parVal = Number(h.par) || 0;
+                                  const grossVal = Number(h.score) || 0;
+                                  const diff = grossVal > 0 && parVal > 0 ? (grossVal - parVal) : 0;
+                                  const displayDiff = diff > 0 ? `+${diff}` : diff === 0 ? "0" : diff;
+                                  return (
+                                    <td key={`over-${h.hole}`} className={`p-1 sm:p-1.5 border-r font-bold ${diff < 0 ? 'text-red-500' : diff > 0 ? 'text-blue-500' : 'text-slate-700'}`}>
+                                      {displayDiff}
+                                    </td>
+                                  );
+                                })}
+                                <td className="p-1 sm:p-1.5 font-bold">
+                                  {(() => {
+                                    const diffTotal = chunkHoles.reduce((acc, h) => {
+                                      const parVal = Number(h.par) || 0;
+                                      const grossVal = Number(h.score) || 0;
+                                      if (grossVal === 0 || parVal === 0) return acc;
+                                      return acc + (grossVal - parVal);
+                                    }, 0);
+                                    return diffTotal > 0 ? `+${diffTotal}` : diffTotal;
+                                  })()}
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="p-1 sm:p-1.5 border-r text-teal-700 font-bold">총스코어</td>
+                                {chunkHoles.map(h => (
+                                  <td key={`score-${h.hole}`} className={`p-1 sm:p-1.5 border-r font-bold ${(h.score || 0) < (h.par || 0) ? 'text-red-500' : (h.score || 0) > (h.par || 0) ? 'text-blue-500' : 'text-slate-700'}`}>
+                                    {h.score}
+                                  </td>
+                                ))}
+                                <td className="p-1 sm:p-1.5 font-bold text-teal-700">{chunkScoreTotal}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </Card>
+            );
+          })}
           {displayGames.length === 0 && (
             <div className="text-center py-10 text-slate-400">아직 등록된 기록이 없습니다.</div>
           )}
