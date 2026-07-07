@@ -1292,7 +1292,8 @@ function ScoresPage() {
                           </table>
                         </div>
                       );
-                    })}
+                    });
+                  })()}
                   </div>
                 )}
               </Card>
