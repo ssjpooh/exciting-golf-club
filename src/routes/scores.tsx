@@ -997,18 +997,18 @@ function ScoresPage() {
             btnClass = "h-11 px-4 text-base font-bold border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100 rounded cursor-pointer shrink-0";
             resetBtnClass = "h-11 px-4 text-base font-bold text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-100 rounded cursor-pointer shrink-0";
           } else if (fontSizePreset === "huge") {
-            filterContainerClass = "p-5 bg-white border border-slate-300 shadow-lg flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between";
-            labelClass = "text-lg text-slate-700 font-black";
-            inputClass = "h-14 py-2 px-3 border w-[180px] bg-slate-50 text-lg font-black rounded";
-            btnClass = "h-14 px-6 text-lg font-black border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100 rounded cursor-pointer shrink-0";
-            resetBtnClass = "h-14 px-6 text-lg font-black text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-100 rounded cursor-pointer shrink-0";
+            filterContainerClass = "p-3 bg-white border border-slate-200 shadow-md flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between";
+            labelClass = "text-sm sm:text-base text-slate-700 font-black";
+            inputClass = "h-10 py-1.5 px-2 border w-[130px] sm:w-[160px] bg-slate-50 text-xs sm:text-sm font-black rounded";
+            btnClass = "h-10 px-4 text-sm sm:text-base font-black border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100 rounded cursor-pointer shrink-0";
+            resetBtnClass = "h-10 px-4 text-sm sm:text-base font-black text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-100 rounded cursor-pointer shrink-0";
           }
 
           return (
             <Card className={filterContainerClass}>
-              {/* 날짜 입력부 (언제나 한 라인 유지) */}
-              <div className="flex items-center gap-1.5 shrink-0 flex-nowrap">
-                <div className="flex items-center gap-1 text-slate-500 font-bold">
+              {/* 날짜 입력부 (화면 크기나 글자 크기가 비대해지면 자연스럽게 줄바꿈되도록 flex-wrap 설정) */}
+              <div className="flex items-center gap-1.5 shrink-0 flex-wrap w-full sm:w-auto">
+                <div className="flex items-center gap-1 text-slate-500 font-bold shrink-0">
                   <span className={labelClass}>시작</span>
                   <Input
                     type="date"
@@ -1017,8 +1017,8 @@ function ScoresPage() {
                     className={inputClass}
                   />
                 </div>
-                <span className="text-slate-300 text-xs">~</span>
-                <div className="flex items-center gap-1 text-slate-500 font-bold">
+                <span className="text-slate-300 text-xs shrink-0">~</span>
+                <div className="flex items-center gap-1 text-slate-500 font-bold shrink-0">
                   <span className={labelClass}>종료</span>
                   <Input
                     type="date"
@@ -1104,16 +1104,16 @@ function ScoresPage() {
               cardTableThTotal = "p-2 border-b text-slate-600 font-black min-w-[44px]";
               cardTableParLabel = "p-2 border-r text-slate-500 font-black";
             } else if (fontSizePreset === "huge") {
-              cardDateText = "text-base sm:text-lg text-slate-600 font-black";
-              cardHeaderBadge = "text-sm sm:text-base font-black bg-slate-150 px-3 py-1 rounded text-slate-800";
-              cardNetBadge = "text-sm sm:text-base font-black text-teal-800 bg-teal-100 px-3 py-1 rounded border-2 border-teal-400";
-              cardTitle = "text-base sm:text-lg font-black flex items-center gap-2";
-              cardStatsText = "flex gap-3 mt-4 text-sm sm:text-base font-black";
-              cardTableText = "text-xs sm:text-sm";
-              cardTableHead = "p-1.5 sm:p-2 border-b border-r text-slate-800 font-black w-12 sm:w-16";
-              cardTableThHole = "p-1.5 sm:p-2 border-b border-r text-slate-800 font-black min-w-[28px] sm:min-w-[36px]";
-              cardTableThTotal = "p-1.5 sm:p-2 border-b text-slate-800 font-black min-w-[36px]";
-              cardTableParLabel = "p-1.5 sm:p-2 border-r text-slate-600 font-black";
+              cardDateText = "text-lg sm:text-xl text-slate-700 font-black";
+              cardHeaderBadge = "text-base sm:text-lg font-black bg-slate-100 px-3 py-1 rounded text-slate-800";
+              cardNetBadge = "text-base sm:text-lg font-black text-teal-800 bg-teal-100 px-3 py-1 rounded border border-teal-300";
+              cardTitle = "text-lg sm:text-xl font-black flex items-center gap-2";
+              cardStatsText = "flex gap-3 mt-4 text-base font-black";
+              cardTableText = "text-sm sm:text-base";
+              cardTableHead = "p-2 sm:p-2.5 border-b border-r text-slate-800 font-bold w-14 sm:w-18";
+              cardTableThHole = "p-2 sm:p-2.5 border-b border-r text-slate-800 font-bold min-w-[32px] sm:min-w-[40px]";
+              cardTableThTotal = "p-2 sm:p-2.5 border-b text-slate-800 font-bold min-w-[40px]";
+              cardTableParLabel = "p-2 sm:p-2.5 border-r text-slate-600 font-bold";
             }
 
             return (
