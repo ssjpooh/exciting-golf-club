@@ -1104,16 +1104,16 @@ function ScoresPage() {
               cardTableThTotal = "p-2 border-b text-slate-600 font-black min-w-[44px]";
               cardTableParLabel = "p-2 border-r text-slate-500 font-black";
             } else if (fontSizePreset === "huge") {
-              cardDateText = "text-lg text-slate-600 font-black";
-              cardHeaderBadge = "text-xl font-black bg-slate-150 px-4 py-2 rounded text-slate-800";
-              cardNetBadge = "text-xl font-black text-teal-800 bg-teal-100 px-4 py-2 rounded border-2 border-teal-400";
-              cardTitle = "text-xl font-black flex items-center gap-2.5";
-              cardStatsText = "flex gap-4 mt-5 text-lg font-black";
-              cardTableText = "text-base sm:text-lg";
-              cardTableHead = "p-3 border-b border-r text-slate-800 font-black w-18 sm:w-24";
-              cardTableThHole = "p-3 border-b border-r text-slate-800 font-black min-w-[44px] sm:min-w-[52px]";
-              cardTableThTotal = "p-3 border-b text-slate-800 font-black min-w-[52px]";
-              cardTableParLabel = "p-3 border-r text-slate-600 font-black";
+              cardDateText = "text-base sm:text-lg text-slate-600 font-black";
+              cardHeaderBadge = "text-sm sm:text-base font-black bg-slate-150 px-3 py-1 rounded text-slate-800";
+              cardNetBadge = "text-sm sm:text-base font-black text-teal-800 bg-teal-100 px-3 py-1 rounded border-2 border-teal-400";
+              cardTitle = "text-base sm:text-lg font-black flex items-center gap-2";
+              cardStatsText = "flex gap-3 mt-4 text-sm sm:text-base font-black";
+              cardTableText = "text-xs sm:text-sm";
+              cardTableHead = "p-1.5 sm:p-2 border-b border-r text-slate-800 font-black w-12 sm:w-16";
+              cardTableThHole = "p-1.5 sm:p-2 border-b border-r text-slate-800 font-black min-w-[28px] sm:min-w-[36px]";
+              cardTableThTotal = "p-1.5 sm:p-2 border-b text-slate-800 font-black min-w-[36px]";
+              cardTableParLabel = "p-1.5 sm:p-2 border-r text-slate-600 font-black";
             }
 
             return (
