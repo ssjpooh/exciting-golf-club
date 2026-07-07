@@ -1093,12 +1093,12 @@ function ScoresPage() {
               cardTableThTotal = "p-1.5 border-b text-slate-500 font-bold min-w-[38px]";
               cardTableParLabel = "p-1.5 border-r text-slate-500 font-bold";
             } else if (fontSizePreset === "large") {
-              cardDateText = "text-base text-slate-500 font-black";
-              cardHeaderBadge = "text-lg font-bold bg-slate-100 px-3 py-1.5 rounded text-slate-700";
-              cardNetBadge = "text-lg font-bold text-teal-700 bg-teal-50 px-3 py-1.5 rounded border border-teal-350";
+              cardDateText = "text-lg text-slate-500 font-black";
+              cardHeaderBadge = "text-base font-bold bg-slate-100 px-3 py-1 rounded text-slate-700";
+              cardNetBadge = "text-base font-bold text-teal-700 bg-teal-50 px-3 py-1 rounded border border-teal-350";
               cardTitle = "text-lg font-bold flex items-center gap-2";
               cardStatsText = "flex gap-3 mt-4 text-base font-black";
-              cardTableText = "text-sm sm:text-base";
+              cardTableText = "text-base sm:text-lg font-extrabold";
               cardTableHead = "p-2 border-b border-r text-slate-600 font-black w-14 sm:w-20";
               cardTableThHole = "p-2 border-b border-r text-slate-600 font-black min-w-[36px] sm:min-w-[44px]";
               cardTableThTotal = "p-2 border-b text-slate-600 font-black min-w-[44px]";
