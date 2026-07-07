@@ -1109,7 +1109,7 @@ function ScoresPage() {
               cardNetBadge = "text-xl sm:text-2xl font-black text-teal-800 bg-teal-100 px-4 py-2 rounded border border-teal-350";
               cardTitle = "text-2xl sm:text-3xl font-black flex items-center gap-3";
               cardStatsText = "flex flex-wrap gap-4 mt-5 text-lg sm:text-xl font-black";
-              cardTableText = "text-lg sm:text-xl font-black";
+              cardTableText = "text-[20px] sm:text-[24px] font-black";
               cardTableHead = "p-3 sm:p-4.5 border-b border-r text-slate-800 font-black w-16 sm:w-24";
               cardTableThHole = "p-3 sm:p-4.5 border-b border-r text-slate-800 font-black min-w-[44px] sm:min-w-[56px]";
               cardTableThTotal = "p-3 sm:p-4.5 border-b text-slate-800 font-black min-w-[56px]";
