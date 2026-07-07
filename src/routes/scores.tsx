@@ -950,24 +950,60 @@ function ScoresPage() {
 
         {!courseId && (
           <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-bold">내 라운드 기록</h2>
-              <Button onClick={() => navigate({ to: "/select-course" })} className="bg-teal-600"><Plus className="w-4 h-4 mr-1"/>기록 추가</Button>
-            </div>
-            {/* 글자 크기 선택 조절 바 (타이틀/기록추가 아래 배치) */}
-            <div className="flex items-center justify-end gap-1.5 bg-slate-50 border p-2 rounded-lg">
-              <Label className="text-xs font-extrabold text-slate-600">입력 창 글자 크기:</Label>
-              <select
-                value={fontSizePreset}
-                onChange={e => setFontSizePreset(e.target.value as any)}
-                className="flex h-7 w-24 rounded border border-input bg-white px-2 py-0.5 text-xs font-bold shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
-              >
-                <option value="normal">보통</option>
-                <option value="medium">중간</option>
-                <option value="large">크게</option>
-                <option value="huge">아주 크게</option>
-              </select>
-            </div>
+            {(() => {
+              let h2Class = "text-lg font-bold";
+              let btnClass = "bg-teal-600 font-bold";
+              let btnIconSize = "w-4 h-4 mr-1";
+              let wrapperClass = "flex items-center justify-end gap-1.5 bg-slate-50 border p-2 rounded-lg";
+              let selectLabelClass = "text-xs font-extrabold text-slate-600";
+              let selectClass = "flex h-7 w-24 rounded border border-input bg-white px-2 py-0.5 text-xs font-bold shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer";
+
+              if (fontSizePreset === "medium") {
+                h2Class = "text-xl font-bold";
+                btnClass = "bg-teal-600 text-sm h-9 px-3 font-bold";
+                selectLabelClass = "text-sm font-extrabold text-slate-600";
+                selectClass = "flex h-8 w-28 rounded border border-input bg-white px-2.5 py-0.5 text-sm font-bold cursor-pointer";
+              } else if (fontSizePreset === "large") {
+                h2Class = "text-2xl font-black";
+                btnClass = "bg-teal-600 text-base h-11 px-4 font-black";
+                btnIconSize = "w-5 h-5 mr-1";
+                wrapperClass = "flex items-center justify-end gap-2 bg-slate-100 border p-2.5 rounded-lg";
+                selectLabelClass = "text-base font-black text-slate-700";
+                selectClass = "flex h-10 w-32 rounded border border-input bg-white px-3 py-1 text-base font-black cursor-pointer";
+              } else if (fontSizePreset === "huge") {
+                h2Class = "text-[28px] font-black leading-tight";
+                btnClass = "bg-teal-600 text-[20px] h-14 px-6 font-black rounded-xl";
+                btnIconSize = "w-6 h-6 mr-1.5";
+                wrapperClass = "flex items-center justify-end gap-3 bg-slate-150 border-2 border-slate-200 p-3 rounded-xl";
+                selectLabelClass = "text-[18px] font-black text-slate-800";
+                selectClass = "flex h-12 w-40 rounded-lg border-2 border-input bg-white px-4 py-1 text-[18px] font-black cursor-pointer";
+              }
+
+              return (
+                <>
+                  <div className="flex justify-between items-center">
+                    <h2 className={h2Class}>내 라운드 기록</h2>
+                    <Button onClick={() => navigate({ to: "/select-course" })} className={btnClass}>
+                      <Plus className={btnIconSize} />기록 추가
+                    </Button>
+                  </div>
+                  {/* 글자 크기 선택 조절 바 (타이틀/기록추가 아래 배치) */}
+                  <div className={wrapperClass}>
+                    <Label className={selectLabelClass}>입력 창 글자 크기:</Label>
+                    <select
+                      value={fontSizePreset}
+                      onChange={e => setFontSizePreset(e.target.value as any)}
+                      className={selectClass}
+                    >
+                      <option value="normal">보통</option>
+                      <option value="medium">중간</option>
+                      <option value="large">크게</option>
+                      <option value="huge">아주 크게</option>
+                    </select>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         )}
         {courseId && (
@@ -997,34 +1033,34 @@ function ScoresPage() {
             btnClass = "h-11 px-4 text-base font-bold border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100 rounded cursor-pointer shrink-0";
             resetBtnClass = "h-11 px-4 text-base font-bold text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-100 rounded cursor-pointer shrink-0";
           } else if (fontSizePreset === "huge") {
-            filterContainerClass = "p-3 bg-white border border-slate-200 shadow-md flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between";
-            labelClass = "text-sm sm:text-base text-slate-700 font-black";
-            inputClass = "h-10 py-1.5 px-2 border w-[130px] sm:w-[160px] bg-slate-50 text-xs sm:text-sm font-black rounded";
-            btnClass = "h-10 px-4 text-sm sm:text-base font-black border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100 rounded cursor-pointer shrink-0";
-            resetBtnClass = "h-10 px-4 text-sm sm:text-base font-black text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-100 rounded cursor-pointer shrink-0";
+            filterContainerClass = "p-5 bg-white border border-slate-300 shadow-lg flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between w-full";
+            labelClass = "text-lg sm:text-xl text-slate-700 font-black";
+            inputClass = "h-14 py-2 px-3 border w-[170px] sm:w-[200px] bg-slate-50 text-base sm:text-lg font-black rounded";
+            btnClass = "h-14 px-6 text-lg sm:text-xl font-black border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100 rounded cursor-pointer shrink-0";
+            resetBtnClass = "h-14 px-6 text-lg sm:text-xl font-black text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-100 rounded cursor-pointer shrink-0";
           }
 
           return (
             <Card className={filterContainerClass}>
-              {/* 날짜 입력부 (화면 크기나 글자 크기가 비대해지면 자연스럽게 줄바꿈되도록 flex-wrap 설정) */}
-              <div className="flex items-center gap-1.5 shrink-0 flex-wrap w-full sm:w-auto">
-                <div className="flex items-center gap-1 text-slate-500 font-bold shrink-0">
-                  <span className={labelClass}>시작</span>
+              {/* 날짜 입력부 (화면 크기나 글자 크기가 비대해지면 자연스럽게 줄바꿈 및 세로 배치되도록 설정) */}
+              <div className={`flex shrink-0 ${fontSizePreset === "huge" ? "flex-col items-start gap-3 w-full" : "flex-row items-center gap-1.5 flex-wrap w-full sm:w-auto"}`}>
+                <div className="flex items-center gap-2 text-slate-500 font-bold shrink-0 w-full sm:w-auto">
+                  <span className={`${labelClass} shrink-0 ${fontSizePreset === "huge" ? "w-10 text-left" : ""}`}>시작</span>
                   <Input
                     type="date"
                     value={startDate}
                     onChange={e => setStartDate(e.target.value)}
-                    className={inputClass}
+                    className={`${inputClass} flex-1 sm:flex-none`}
                   />
                 </div>
-                <span className="text-slate-300 text-xs shrink-0">~</span>
-                <div className="flex items-center gap-1 text-slate-500 font-bold shrink-0">
-                  <span className={labelClass}>종료</span>
+                {fontSizePreset !== "huge" && <span className="text-slate-300 text-xs shrink-0">~</span>}
+                <div className="flex items-center gap-2 text-slate-500 font-bold shrink-0 w-full sm:w-auto">
+                  <span className={`${labelClass} shrink-0 ${fontSizePreset === "huge" ? "w-10 text-left" : ""}`}>종료</span>
                   <Input
                     type="date"
                     value={endDate}
                     onChange={e => setEndDate(e.target.value)}
-                    className={inputClass}
+                    className={`${inputClass} flex-1 sm:flex-none`}
                   />
                 </div>
               </div>
@@ -1147,9 +1183,9 @@ function ScoresPage() {
                 </div>
                 {game.stats && (
                   <div className={cardStatsText}>
-                    <span className="bg-red-50 text-red-600 px-2 py-1 rounded">버디 {game.stats.birdies}</span>
-                    <span className="bg-teal-50 text-teal-600 px-2 py-1 rounded">파 {game.stats.pars}</span>
-                    <span className="bg-amber-50 text-amber-600 px-2 py-1 rounded border border-amber-100">보기 {game.stats.bogeys}</span>
+                    <span className={`bg-red-50 text-red-600 px-2 py-1 rounded ${fontSizePreset === "huge" ? "text-xl font-black px-4 py-2" : fontSizePreset === "large" ? "text-base font-extrabold px-3 py-1.5" : "text-xs"}`}>버디 {game.stats.birdies}</span>
+                    <span className={`bg-teal-50 text-teal-600 px-2 py-1 rounded ${fontSizePreset === "huge" ? "text-xl font-black px-4 py-2" : fontSizePreset === "large" ? "text-base font-extrabold px-3 py-1.5" : "text-xs"}`}>파 {game.stats.pars}</span>
+                    <span className={`bg-amber-50 text-amber-600 px-2 py-1 rounded border border-amber-100 ${fontSizePreset === "huge" ? "text-xl font-black px-4 py-2" : fontSizePreset === "large" ? "text-base font-extrabold px-3 py-1.5" : "text-xs"}`}>보기 {game.stats.bogeys}</span>
                     {/* 양파 갯수 실시간 계산 배지 추가 */}
                     {(() => {
                       const doublePars = game.holes?.filter(h => {
@@ -1158,7 +1194,7 @@ function ScoresPage() {
                         return parVal > 0 && (scoreVal - parVal) === parVal;
                       }).length || 0;
                       return (
-                        <span className="bg-blue-50 text-blue-600 px-2 py-1 rounded border border-blue-100">양파 {doublePars}</span>
+                        <span className={`bg-blue-50 text-blue-600 px-2 py-1 rounded border border-blue-100 ${fontSizePreset === "huge" ? "text-xl font-black px-4 py-2" : fontSizePreset === "large" ? "text-base font-extrabold px-3 py-1.5" : "text-xs"}`}>양파 {doublePars}</span>
                       );
                     })()}
                   </div>
