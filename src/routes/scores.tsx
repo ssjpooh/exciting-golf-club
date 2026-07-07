@@ -1104,16 +1104,16 @@ function ScoresPage() {
               cardTableThTotal = "p-2 border-b text-slate-600 font-black min-w-[44px]";
               cardTableParLabel = "p-2 border-r text-slate-500 font-black";
             } else if (fontSizePreset === "huge") {
-              cardDateText = "text-lg sm:text-xl text-slate-700 font-black";
-              cardHeaderBadge = "text-base sm:text-lg font-black bg-slate-100 px-3 py-1 rounded text-slate-800";
-              cardNetBadge = "text-base sm:text-lg font-black text-teal-800 bg-teal-100 px-3 py-1 rounded border border-teal-300";
-              cardTitle = "text-lg sm:text-xl font-black flex items-center gap-2";
-              cardStatsText = "flex gap-3 mt-4 text-base font-black";
-              cardTableText = "text-sm sm:text-base";
-              cardTableHead = "p-2 sm:p-2.5 border-b border-r text-slate-800 font-bold w-14 sm:w-18";
-              cardTableThHole = "p-2 sm:p-2.5 border-b border-r text-slate-800 font-bold min-w-[32px] sm:min-w-[40px]";
-              cardTableThTotal = "p-2 sm:p-2.5 border-b text-slate-800 font-bold min-w-[40px]";
-              cardTableParLabel = "p-2 sm:p-2.5 border-r text-slate-600 font-bold";
+              cardDateText = "text-2xl sm:text-3xl text-slate-700 font-black";
+              cardHeaderBadge = "text-xl sm:text-2xl font-black bg-slate-100 px-4 py-2 rounded text-slate-800";
+              cardNetBadge = "text-xl sm:text-2xl font-black text-teal-800 bg-teal-100 px-4 py-2 rounded border border-teal-350";
+              cardTitle = "text-2xl sm:text-3xl font-black flex items-center gap-3";
+              cardStatsText = "flex flex-wrap gap-4 mt-5 text-lg sm:text-xl font-black";
+              cardTableText = "text-lg sm:text-xl font-black";
+              cardTableHead = "p-3 sm:p-4.5 border-b border-r text-slate-800 font-black w-16 sm:w-24";
+              cardTableThHole = "p-3 sm:p-4.5 border-b border-r text-slate-800 font-black min-w-[44px] sm:min-w-[56px]";
+              cardTableThTotal = "p-3 sm:p-4.5 border-b text-slate-800 font-black min-w-[56px]";
+              cardTableParLabel = "p-3 sm:p-4.5 border-r text-slate-600 font-black";
             }
 
             return (
@@ -1165,17 +1165,30 @@ function ScoresPage() {
                 )}
                 {game.holes && game.holes.length > 0 && (
                   <div className={`mt-3 bg-white rounded border overflow-hidden ${cardTableText}`}>
-                    {Array.from({ length: Math.ceil(game.holes.length / 9) }).map((_, chunkIndex) => {
-                      const chunkHoles = game.holes!.slice(chunkIndex * 9, (chunkIndex + 1) * 9);
-                      const chunkParTotal = chunkHoles.reduce((sum, h) => sum + (Number(h.par) || 0), 0);
-                      const chunkScoreTotal = chunkHoles.reduce((sum, h) => sum + (Number(h.score) || 0), 0);
+                    {(() => {
+                      const chunkSize = fontSizePreset === "huge" ? 6 : 9;
+                      return Array.from({ length: Math.ceil(game.holes.length / chunkSize) }).map((_, chunkIndex) => {
+                        const chunkHoles = game.holes!.slice(chunkIndex * chunkSize, (chunkIndex + 1) * chunkSize);
+                        const chunkParTotal = chunkHoles.reduce((sum, h) => sum + (Number(h.par) || 0), 0);
+                        const chunkScoreTotal = chunkHoles.reduce((sum, h) => sum + (Number(h.score) || 0), 0);
 
-                      return (
-                        <div key={chunkIndex} className={`${chunkIndex > 0 ? "border-t" : ""} overflow-x-auto`}>
+                        const headerLabel = chunkSize === 6
+                           ? (chunkIndex === 0 ? "1~6홀" : chunkIndex === 1 ? "7~12홀" : "13~18홀")
+                           : (chunkIndex === 0 ? "전반" : "후반");
+
+                         let tdPadding = "p-1 sm:p-1.5";
+                         let boldTextClass = "font-bold";
+                         if (fontSizePreset === "huge") {
+                           tdPadding = "p-2.5 sm:p-4";
+                           boldTextClass = "font-black";
+                         }
+
+                        return (
+                          <div key={chunkIndex} className={`${chunkIndex > 0 ? "border-t" : ""} overflow-x-auto`}>
                           <table className="w-full text-center border-collapse whitespace-nowrap">
                             <thead>
                               <tr className="bg-slate-50">
-                                <th className={cardTableHead}>{chunkIndex === 0 ? "전반" : "후반"}</th>
+                                <th className={cardTableHead}>{headerLabel}</th>
                                 {chunkHoles.map(h => <th key={`hole-${h.hole}`} className={cardTableThHole}>{h.hole}</th>)}
                                 <th className={cardTableThTotal}>합</th>
                               </tr>
@@ -1183,31 +1196,30 @@ function ScoresPage() {
                             <tbody>
                               <tr>
                                 <td className={cardTableParLabel}>Par</td>
-                                {chunkHoles.map(h => <td key={`par-${h.hole}`} className="p-1 sm:p-1.5 border-r">{h.par}</td>)}
-                                <td className="p-1 sm:p-1.5 font-bold">{chunkParTotal}</td>
+                                {chunkHoles.map(h => <td key={`par-${h.hole}`} className={`${tdPadding} border-r`}>{h.par}</td>)}
+                                <td className={`${tdPadding} ${boldTextClass}`}>{chunkParTotal}</td>
                               </tr>
                               <tr className="bg-slate-50/50">
-                                <td className="p-1 sm:p-1.5 border-r text-slate-500 font-bold">오버타</td>
+                                <td className={`${tdPadding} border-r text-slate-500 ${boldTextClass}`}>오버타</td>
                                 {chunkHoles.map(h => {
                                   const parVal = Number(h.par) || 0;
                                   const grossVal = Number(h.score) || 0;
                                   const diff = grossVal > 0 && parVal > 0 ? (grossVal - parVal) : 0;
                                   const displayDiff = diff > 0 ? `+${diff}` : diff === 0 ? "0" : diff;
                                   
-                                  // Default is black/dark slate. Match specific highlights: Birdie (red), Par (teal), Bogey (amber), Double Par (blue)
                                   let textColor = "text-slate-900";
                                   if (diff < 0) textColor = "text-red-500";
                                   else if (diff === 0) textColor = "text-teal-600";
-                                  else if (diff === 1) textColor = "text-amber-600"; // Bogey
-                                  else if (diff === parVal && parVal > 0) textColor = "text-blue-500"; // Double Par (양파)
+                                  else if (diff === 1) textColor = "text-amber-600";
+                                  else if (diff === parVal && parVal > 0) textColor = "text-blue-500";
 
                                   return (
-                                    <td key={`over-${h.hole}`} className={`p-1 sm:p-1.5 border-r font-bold ${textColor}`}>
+                                    <td key={`over-${h.hole}`} className={`${tdPadding} border-r ${boldTextClass} ${textColor}`}>
                                       {displayDiff}
                                     </td>
                                   );
                                 })}
-                                <td className="p-1 sm:p-1.5 font-bold">
+                                <td className={`${tdPadding} ${boldTextClass}`}>
                                   {(() => {
                                     const diffTotal = chunkHoles.reduce((acc, h) => {
                                       const parVal = Number(h.par) || 0;
@@ -1220,7 +1232,7 @@ function ScoresPage() {
                                 </td>
                               </tr>
                               <tr>
-                                <td className="p-1 sm:p-1.5 border-r text-teal-700 font-bold">총스코어</td>
+                                <td className={`${tdPadding} border-r text-teal-700 ${boldTextClass}`}>총스코어</td>
                                 {chunkHoles.map(h => {
                                   const parVal = Number(h.par) || 0;
                                   const grossVal = Number(h.score) || 0;
@@ -1233,12 +1245,12 @@ function ScoresPage() {
                                   else if (diff === parVal && parVal > 0) textColor = "text-blue-500 font-black"; // Double Par (양파)
 
                                   return (
-                                    <td key={`score-${h.hole}`} className={`p-1 sm:p-1.5 border-r font-bold ${textColor}`}>
+                                    <td key={`score-${h.hole}`} className={`${tdPadding} border-r ${boldTextClass} ${textColor}`}>
                                       {h.score}
                                     </td>
                                   );
                                 })}
-                                <td className="p-1 sm:p-1.5 font-bold text-teal-700">{chunkScoreTotal}</td>
+                                <td className={`${tdPadding} ${boldTextClass} text-teal-700`}>{chunkScoreTotal}</td>
                               </tr>
                             </tbody>
                           </table>
