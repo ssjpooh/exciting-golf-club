@@ -62,7 +62,7 @@ function RecordRoundDialog({
   onDelete?: (scoreId: string) => void;
   defaultHandicap?: number;
   initialData?: Score | null;
-  fontSizePreset: 'normal' | 'medium' | 'large';
+  fontSizePreset: 'normal' | 'medium' | 'large' | 'huge';
 }) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [location, setLocation] = useState(courseInfo?.name || "");
@@ -573,6 +573,12 @@ function RecordRoundDialog({
                   tableTextSize = "text-lg";
                   containerMaxPar = "max-w-[160px]";
                   containerMaxScore = "max-w-[170px]";
+                } else if (fontSizePreset === "huge") {
+                  btnSize = "h-12 w-12 text-lg font-black";
+                  inputSize = "w-20 h-14 text-xl font-black";
+                  tableTextSize = "text-xl font-bold";
+                  containerMaxPar = "max-w-[200px]";
+                  containerMaxScore = "max-w-[210px]";
                 }
 
                 return (
@@ -748,7 +754,7 @@ function ScoresPage() {
   });
   const [endDate, setEndDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
-  const [fontSizePreset, setFontSizePreset] = useState<'normal' | 'medium' | 'large'>('normal');
+  const [fontSizePreset, setFontSizePreset] = useState<'normal' | 'medium' | 'large' | 'huge'>('normal');
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (currentUser) => {
@@ -959,6 +965,7 @@ function ScoresPage() {
                 <option value="normal">보통</option>
                 <option value="medium">중간</option>
                 <option value="large">크게</option>
+                <option value="huge">아주 크게</option>
               </select>
             </div>
           </div>
@@ -989,6 +996,12 @@ function ScoresPage() {
             inputClass = "h-11 py-1.5 px-2 border w-[150px] bg-slate-50 text-base font-bold rounded";
             btnClass = "h-11 px-4 text-base font-bold border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100 rounded cursor-pointer shrink-0";
             resetBtnClass = "h-11 px-4 text-base font-bold text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-100 rounded cursor-pointer shrink-0";
+          } else if (fontSizePreset === "huge") {
+            filterContainerClass = "p-5 bg-white border border-slate-300 shadow-lg flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between";
+            labelClass = "text-lg text-slate-700 font-black";
+            inputClass = "h-14 py-2 px-3 border w-[180px] bg-slate-50 text-lg font-black rounded";
+            btnClass = "h-14 px-6 text-lg font-black border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100 rounded cursor-pointer shrink-0";
+            resetBtnClass = "h-14 px-6 text-lg font-black text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-100 rounded cursor-pointer shrink-0";
           }
 
           return (
@@ -1090,6 +1103,17 @@ function ScoresPage() {
               cardTableThHole = "p-2 border-b border-r text-slate-600 font-black min-w-[36px] sm:min-w-[44px]";
               cardTableThTotal = "p-2 border-b text-slate-600 font-black min-w-[44px]";
               cardTableParLabel = "p-2 border-r text-slate-500 font-black";
+            } else if (fontSizePreset === "huge") {
+              cardDateText = "text-lg text-slate-600 font-black";
+              cardHeaderBadge = "text-xl font-black bg-slate-150 px-4 py-2 rounded text-slate-800";
+              cardNetBadge = "text-xl font-black text-teal-800 bg-teal-100 px-4 py-2 rounded border-2 border-teal-400";
+              cardTitle = "text-xl font-black flex items-center gap-2.5";
+              cardStatsText = "flex gap-4 mt-5 text-lg font-black";
+              cardTableText = "text-base sm:text-lg";
+              cardTableHead = "p-3 border-b border-r text-slate-800 font-black w-18 sm:w-24";
+              cardTableThHole = "p-3 border-b border-r text-slate-800 font-black min-w-[44px] sm:min-w-[52px]";
+              cardTableThTotal = "p-3 border-b text-slate-800 font-black min-w-[52px]";
+              cardTableParLabel = "p-3 border-r text-slate-600 font-black";
             }
 
             return (
