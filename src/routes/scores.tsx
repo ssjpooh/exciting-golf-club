@@ -1144,7 +1144,7 @@ function ScoresPage() {
               cardHeaderBadge = "text-xl sm:text-2xl font-black bg-slate-100 px-4 py-2 rounded text-slate-800";
               cardNetBadge = "text-xl sm:text-2xl font-black text-teal-800 bg-teal-100 px-4 py-2 rounded border border-teal-350";
               cardTitle = "text-2xl sm:text-3xl font-black flex items-center gap-3";
-              cardStatsText = "flex flex-wrap gap-4 mt-5 text-lg sm:text-xl font-black";
+              cardStatsText = "flex gap-1.5 sm:gap-2.5 mt-5 text-sm sm:text-base font-black whitespace-nowrap overflow-x-auto scrollbar-none";
               cardTableText = "text-[20px] sm:text-[24px] font-black";
               cardTableHead = "p-3 sm:p-4.5 border-b border-r text-slate-800 font-black w-16 sm:w-24";
               cardTableThHole = "p-3 sm:p-4.5 border-b border-r text-slate-800 font-black min-w-[44px] sm:min-w-[56px]";
@@ -1183,9 +1183,9 @@ function ScoresPage() {
                 </div>
                 {game.stats && (
                   <div className={cardStatsText}>
-                    <span className={`bg-red-50 text-red-600 px-2 py-1 rounded ${fontSizePreset === "huge" ? "text-xl font-black px-4 py-2" : fontSizePreset === "large" ? "text-base font-extrabold px-3 py-1.5" : "text-xs"}`}>버디 {game.stats.birdies}</span>
-                    <span className={`bg-teal-50 text-teal-600 px-2 py-1 rounded ${fontSizePreset === "huge" ? "text-xl font-black px-4 py-2" : fontSizePreset === "large" ? "text-base font-extrabold px-3 py-1.5" : "text-xs"}`}>파 {game.stats.pars}</span>
-                    <span className={`bg-amber-50 text-amber-600 px-2 py-1 rounded border border-amber-100 ${fontSizePreset === "huge" ? "text-xl font-black px-4 py-2" : fontSizePreset === "large" ? "text-base font-extrabold px-3 py-1.5" : "text-xs"}`}>보기 {game.stats.bogeys}</span>
+                    <span className={`bg-red-50 text-red-600 px-2 py-1 rounded ${fontSizePreset === "huge" ? "text-base sm:text-lg font-black px-2.5 py-1.5" : fontSizePreset === "large" ? "text-base font-extrabold px-3 py-1.5" : "text-xs"}`}>버디 {game.stats.birdies}</span>
+                    <span className={`bg-teal-50 text-teal-600 px-2 py-1 rounded ${fontSizePreset === "huge" ? "text-base sm:text-lg font-black px-2.5 py-1.5" : fontSizePreset === "large" ? "text-base font-extrabold px-3 py-1.5" : "text-xs"}`}>파 {game.stats.pars}</span>
+                    <span className={`bg-amber-50 text-amber-600 px-2 py-1 rounded border border-amber-100 ${fontSizePreset === "huge" ? "text-base sm:text-lg font-black px-2.5 py-1.5" : fontSizePreset === "large" ? "text-base font-extrabold px-3 py-1.5" : "text-xs"}`}>보기 {game.stats.bogeys}</span>
                     {/* 양파 갯수 실시간 계산 배지 추가 */}
                     {(() => {
                       const doublePars = game.holes?.filter(h => {
@@ -1194,7 +1194,7 @@ function ScoresPage() {
                         return parVal > 0 && (scoreVal - parVal) === parVal;
                       }).length || 0;
                       return (
-                        <span className={`bg-blue-50 text-blue-600 px-2 py-1 rounded border border-blue-100 ${fontSizePreset === "huge" ? "text-xl font-black px-4 py-2" : fontSizePreset === "large" ? "text-base font-extrabold px-3 py-1.5" : "text-xs"}`}>양파 {doublePars}</span>
+                        <span className={`bg-blue-50 text-blue-600 px-2 py-1 rounded border border-blue-100 ${fontSizePreset === "huge" ? "text-base sm:text-lg font-black px-2.5 py-1.5" : fontSizePreset === "large" ? "text-base font-extrabold px-3 py-1.5" : "text-xs"}`}>양파 {doublePars}</span>
                       );
                     })()}
                   </div>
