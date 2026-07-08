@@ -27,6 +27,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip as ChartTooltip,
+  Legend,
+  CartesianGrid,
+} from "recharts";
 
 type ScoresSearch = {
   viewUid?: string;
@@ -1105,17 +1115,6 @@ function ScoresPage() {
 
         {/* ⛳ 9홀/18홀 게임별 파, 버디, 보기, 양파 수치 통계 그래프 영역 */}
         {(() => {
-          const {
-            ResponsiveContainer,
-            BarChart,
-            Bar,
-            XAxis,
-            YAxis,
-            Tooltip: ChartTooltip,
-            Legend,
-            CartesianGrid
-          } = require("recharts");
-
           // 9홀/18홀 별 게임 분류
           // 각 게임의 홀 개수는 game.holes.length로 판별합니다.
           const categorizedGames = displayGames.filter(g => {
