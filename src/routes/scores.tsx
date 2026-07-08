@@ -765,6 +765,7 @@ function ScoresPage() {
   const [endDate, setEndDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
   const [fontSizePreset, setFontSizePreset] = useState<'normal' | 'medium' | 'large' | 'huge'>('normal');
+  const [activeHoleTab, setActiveHoleTab] = useState<'9' | '18'>('18');
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (currentUser) => {
