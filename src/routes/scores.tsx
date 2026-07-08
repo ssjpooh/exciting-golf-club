@@ -29,8 +29,8 @@ import {
 } from "@/components/ui/dialog";
 import {
   ResponsiveContainer,
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   Tooltip as ChartTooltip,
@@ -1286,7 +1286,7 @@ function ScoresPage() {
                   {/* Recharts 그래프 렌더링 영역 */}
                   <div className="w-full relative pt-2" style={{ height: chartHeight }}>
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
+                      <LineChart
                         data={sortedChartData}
                         margin={{ top: 10, right: 5, left: -25, bottom: 5 }}
                       >
@@ -1299,6 +1299,7 @@ function ScoresPage() {
                         />
                         <YAxis
                           allowDecimals={false}
+                          domain={["dataMin - 5", "dataMax + 5"]}
                           tick={{ fill: "#64748b", fontSize: fontSizePreset === "huge" ? 14 : 10, fontWeight: "bold" }}
                           axisLine={{ stroke: "#cbd5e1" }}
                           tickLine={false}
@@ -1315,12 +1316,9 @@ function ScoresPage() {
                             color: "#475569"
                           }}
                         />
-                        {/* 스택 형태로 층층이 쌓아서 표현하는 누적 막대 그래프 */}
-                        <Bar dataKey="버디" stackId="a" fill="#ef4444" radius={[0, 0, 0, 0]} />
-                        <Bar dataKey="파" stackId="a" fill="#0d9488" radius={[0, 0, 0, 0]} />
-                        <Bar dataKey="보기" stackId="a" fill="#f59e0b" radius={[0, 0, 0, 0]} />
-                        <Bar dataKey="양파" stackId="a" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                      </BarChart>
+                        {/* 점과 선으로만 표현하는 라인 그래프 (총 스코어) */}
+                        <Line type="natural" dataKey="totalScore" stroke="#0d9488" strokeWidth={2} name="총 스코어 (타)" activeDot={{ r: 6 }} dot={{ r: 4 }} />
+                      </LineChart>
                     </ResponsiveContainer>
                   </div>
                 </>
