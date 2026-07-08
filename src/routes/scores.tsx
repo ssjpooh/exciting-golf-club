@@ -1237,27 +1237,23 @@ function ScoresPage() {
               {/* 타이틀 및 9홀/18홀 탭선택 */}
               <div className={titleClass}>
                 <span className="flex items-center gap-1.5 shrink-0">📈 스코어 통계 그래프</span>
-                <div className={`flex gap-1 bg-slate-100 p-1 rounded-xl shrink-0 ${fontSizePreset === "huge" ? "w-full" : ""}`}>
-                  <button
-                    onClick={() => setActiveHoleTab('18')}
-                    className={`${tabBtnClass} ${
-                      activeHoleTab === '18'
-                        ? "bg-white text-teal-700 shadow-sm border border-slate-200/50"
-                        : "text-slate-500 hover:text-slate-800 bg-transparent border-none"
+                <div className={`shrink-0 ${fontSizePreset === "huge" ? "w-full mt-2" : ""}`}>
+                  <select
+                    value={activeHoleTab}
+                    onChange={(e) => setActiveHoleTab(e.target.value as '9' | '18')}
+                    className={`rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 font-bold cursor-pointer outline-none transition-colors ${
+                      fontSizePreset === "huge"
+                        ? "h-14 text-lg w-full"
+                        : fontSizePreset === "large"
+                          ? "h-11 text-base w-32"
+                          : fontSizePreset === "medium"
+                            ? "h-9 text-sm w-28"
+                            : "h-8 text-xs w-24"
                     }`}
                   >
-                    18홀 게임
-                  </button>
-                  <button
-                    onClick={() => setActiveHoleTab('9')}
-                    className={`${tabBtnClass} ${
-                      activeHoleTab === '9'
-                        ? "bg-white text-teal-700 shadow-sm border border-slate-200/50"
-                        : "text-slate-500 hover:text-slate-800 bg-transparent border-none"
-                    }`}
-                  >
-                    9홀 게임
-                  </button>
+                    <option value="18">18홀 게임</option>
+                    <option value="9">9홀 게임</option>
+                  </select>
                 </div>
               </div>
 
