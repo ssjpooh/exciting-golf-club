@@ -1103,6 +1103,236 @@ function ScoresPage() {
           );
         })()}
 
+        {/* ⛳ 9홀/18홀 게임별 파, 버디, 보기, 양파 수치 통계 그래프 영역 */}
+        {(() => {
+          const {
+            ResponsiveContainer,
+            BarChart,
+            Bar,
+            XAxis,
+            YAxis,
+            Tooltip: ChartTooltip,
+            Legend,
+            CartesianGrid
+          } = require("recharts");
+
+          // 9홀/18홀 별 게임 분류
+          // 각 게임의 홀 개수는 game.holes.length로 판별합니다.
+          const categorizedGames = displayGames.filter(g => {
+            const holeCount = g.holes?.length || 0;
+            if (activeHoleTab === '9') {
+              return holeCount === 9;
+            } else {
+              return holeCount === 18;
+            }
+          });
+
+          // 날짜 기준 오름차순 정렬 (과거에서 미래로 흐름)
+          const sortedChartData = [...categorizedGames]
+            .sort((a, b) => a.date.localeCompare(b.date))
+            .map(g => {
+              // 양파(Double Par) 계산: 각 홀의 score - par === par 이거나 (score - par === 4 인 경우 파4 기준 더블파)
+              // 여기서는 score - par === par (기본 점수 저장 로직 상 relative score가 parVal과 동일)인 개수를 셉니다.
+              const doublePars = g.holes?.filter(h => {
+                const parVal = Number(h.par) || 0;
+                const scoreVal = Number(h.score) || 0;
+                // db.ts 에 정의된 scoreVal은 실제 획득한 grossScore 타수이며,
+                // double par는 타수가 par의 2배인 경우(즉, 오버타가 par와 같은 경우)를 가리킵니다.
+                return parVal > 0 && (scoreVal - parVal) === parVal;
+              }).length || 0;
+
+              // 버디(Birdie), 파(Par), 보기(Bogey) 계산
+              const birdies = g.stats?.birdies || 0;
+              const pars = g.stats?.pars || 0;
+              const bogeys = g.stats?.bogeys || 0;
+
+              // 차트 축 및 툴팁 표기용 라벨 포맷 (날짜 + 약칭 위치)
+              const locationShort = g.location ? g.location.split("(")[0].trim().slice(0, 5) : "";
+              const label = `${g.date.slice(5)} ${locationShort}`;
+
+              return {
+                name: label,
+                fullDate: g.date,
+                location: g.location || "기록 없음",
+                totalScore: g.total,
+                버디: birdies,
+                파: pars,
+                보기: bogeys,
+                양파: doublePars,
+              };
+            });
+
+          // 요약 통계량 계산
+          const totalGamesCount = categorizedGames.length;
+          const avgStats = {
+            birdies: totalGamesCount > 0 ? (categorizedGames.reduce((sum, g) => sum + (g.stats?.birdies || 0), 0) / totalGamesCount).toFixed(1) : "0.0",
+            pars: totalGamesCount > 0 ? (categorizedGames.reduce((sum, g) => sum + (g.stats?.pars || 0), 0) / totalGamesCount).toFixed(1) : "0.0",
+            bogeys: totalGamesCount > 0 ? (categorizedGames.reduce((sum, g) => sum + (g.stats?.bogeys || 0), 0) / totalGamesCount).toFixed(1) : "0.0",
+            doublePars: totalGamesCount > 0 ? (categorizedGames.reduce((sum, g) => {
+              const dp = g.holes?.filter(h => {
+                const parVal = Number(h.par) || 0;
+                const scoreVal = Number(h.score) || 0;
+                return parVal > 0 && (scoreVal - parVal) === parVal;
+              }).length || 0;
+              return sum + dp;
+            }, 0) / totalGamesCount).toFixed(1) : "0.0"
+          };
+
+          // 폰트 크기 프리셋에 따른 클래스 적용
+          let containerClass = "p-4 bg-white border border-slate-100 shadow-sm rounded-xl space-y-4";
+          let titleClass = "text-sm font-bold text-slate-800 flex items-center justify-between";
+          let tabBtnClass = "h-8 px-3 text-xs font-bold rounded-lg transition-all";
+          let summaryGridClass = "grid grid-cols-4 gap-2 text-center";
+          let summaryLabelClass = "text-[10px] font-bold text-slate-500 uppercase";
+          let summaryValClass = "text-base font-black";
+          let chartHeight = 240;
+
+          if (fontSizePreset === "medium") {
+            containerClass = "p-5 bg-white border border-slate-100 shadow-sm rounded-xl space-y-4.5";
+            titleClass = "text-base font-bold text-slate-800 flex items-center justify-between";
+            tabBtnClass = "h-9 px-4 text-sm font-bold rounded-lg transition-all";
+            summaryLabelClass = "text-xs font-bold text-slate-500 uppercase";
+            summaryValClass = "text-lg font-black";
+            chartHeight = 260;
+          } else if (fontSizePreset === "large") {
+            containerClass = "p-6 bg-white border border-slate-200 shadow-md rounded-2xl space-y-5";
+            titleClass = "text-lg font-black text-slate-800 flex items-center justify-between";
+            tabBtnClass = "h-11 px-5 text-base font-black rounded-xl transition-all";
+            summaryLabelClass = "text-sm font-black text-slate-600 uppercase";
+            summaryValClass = "text-xl font-black";
+            chartHeight = 300;
+          } else if (fontSizePreset === "huge") {
+            containerClass = "p-7 bg-white border-2 border-slate-200 shadow-lg rounded-2xl space-y-6";
+            titleClass = "text-xl sm:text-2xl font-black text-slate-800 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between";
+            tabBtnClass = "h-14 px-6 text-lg sm:text-xl font-black rounded-xl transition-all flex-1 text-center";
+            summaryGridClass = "grid grid-cols-2 sm:grid-cols-4 gap-3 text-center";
+            summaryLabelClass = "text-base font-black text-slate-600 uppercase";
+            summaryValClass = "text-2xl font-black";
+            chartHeight = 340;
+          }
+
+          // Custom Tooltip component for Recharts
+          const CustomTooltip = ({ active, payload }: any) => {
+            if (active && payload && payload.length) {
+              const data = payload[0].payload;
+              return (
+                <div className="bg-slate-900/95 text-white p-3 rounded-lg shadow-xl border border-slate-800 text-xs font-bold space-y-1 z-30">
+                  <p className="text-slate-300 font-extrabold">{data.fullDate}</p>
+                  <p className="text-[11px] text-teal-400 font-bold truncate max-w-[200px]">{data.location}</p>
+                  <p className="text-[11px] text-white font-black border-t border-slate-800 pt-1 mt-1">총 스코어: {data.totalScore}타</p>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 pt-1 text-[10px]">
+                    <span className="text-red-400">버디: {data.버디}개</span>
+                    <span className="text-teal-400">파: {data.파}개</span>
+                    <span className="text-amber-400">보기: {data.보기}개</span>
+                    <span className="text-blue-400">양파: {data.양파}개</span>
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          };
+
+          return (
+            <Card className={containerClass}>
+              {/* 타이틀 및 9홀/18홀 탭선택 */}
+              <div className={titleClass}>
+                <span className="flex items-center gap-1.5 shrink-0">📈 스코어 통계 그래프</span>
+                <div className={`flex gap-1 bg-slate-100 p-1 rounded-xl shrink-0 ${fontSizePreset === "huge" ? "w-full" : ""}`}>
+                  <button
+                    onClick={() => setActiveHoleTab('18')}
+                    className={`${tabBtnClass} ${
+                      activeHoleTab === '18'
+                        ? "bg-white text-teal-700 shadow-sm border border-slate-200/50"
+                        : "text-slate-500 hover:text-slate-800 bg-transparent border-none"
+                    }`}
+                  >
+                    18홀 게임
+                  </button>
+                  <button
+                    onClick={() => setActiveHoleTab('9')}
+                    className={`${tabBtnClass} ${
+                      activeHoleTab === '9'
+                        ? "bg-white text-teal-700 shadow-sm border border-slate-200/50"
+                        : "text-slate-500 hover:text-slate-800 bg-transparent border-none"
+                    }`}
+                  >
+                    9홀 게임
+                  </button>
+                </div>
+              </div>
+
+              {/* 통계 요약 피드 */}
+              {totalGamesCount === 0 ? (
+                <div className="text-center py-6 text-slate-400 text-xs font-bold border border-dashed rounded-xl">
+                  해당 기간 내의 {activeHoleTab}홀 라운드 기록이 없습니다.
+                </div>
+              ) : (
+                <>
+                  <div className={summaryGridClass}>
+                    <div className="bg-red-50/50 border border-red-100 p-2.5 rounded-xl">
+                      <div className={summaryLabelClass}>평균 버디</div>
+                      <div className={`${summaryValClass} text-red-600 mt-1`}>{avgStats.birdies}개</div>
+                    </div>
+                    <div className="bg-teal-50/50 border border-teal-100 p-2.5 rounded-xl">
+                      <div className={summaryLabelClass}>평균 파</div>
+                      <div className={`${summaryValClass} text-teal-600 mt-1`}>{avgStats.pars}개</div>
+                    </div>
+                    <div className="bg-amber-50/50 border border-amber-100 p-2.5 rounded-xl">
+                      <div className={summaryLabelClass}>평균 보기</div>
+                      <div className={`${summaryValClass} text-amber-600 mt-1`}>{avgStats.bogeys}개</div>
+                    </div>
+                    <div className="bg-blue-50/50 border border-blue-100 p-2.5 rounded-xl">
+                      <div className={summaryLabelClass}>평균 양파</div>
+                      <div className={`${summaryValClass} text-blue-600 mt-1`}>{avgStats.doublePars}개</div>
+                    </div>
+                  </div>
+
+                  {/* Recharts 그래프 렌더링 영역 */}
+                  <div className="w-full relative pt-2" style={{ height: chartHeight }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={sortedChartData}
+                        margin={{ top: 10, right: 5, left: -25, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis
+                          dataKey="name"
+                          tick={{ fill: "#64748b", fontSize: fontSizePreset === "huge" ? 14 : 10, fontWeight: "bold" }}
+                          axisLine={{ stroke: "#cbd5e1" }}
+                          tickLine={false}
+                        />
+                        <YAxis
+                          allowDecimals={false}
+                          tick={{ fill: "#64748b", fontSize: fontSizePreset === "huge" ? 14 : 10, fontWeight: "bold" }}
+                          axisLine={{ stroke: "#cbd5e1" }}
+                          tickLine={false}
+                        />
+                        <ChartTooltip content={<CustomTooltip />} />
+                        <Legend
+                          verticalAlign="top"
+                          height={36}
+                          iconSize={10}
+                          iconType="circle"
+                          wrapperStyle={{
+                            fontSize: fontSizePreset === "huge" ? 14 : 11,
+                            fontWeight: "bold",
+                            color: "#475569"
+                          }}
+                        />
+                        {/* 스택 형태로 층층이 쌓아서 표현하는 누적 막대 그래프 */}
+                        <Bar dataKey="버디" stackId="a" fill="#ef4444" radius={[0, 0, 0, 0]} />
+                        <Bar dataKey="파" stackId="a" fill="#0d9488" radius={[0, 0, 0, 0]} />
+                        <Bar dataKey="보기" stackId="a" fill="#f59e0b" radius={[0, 0, 0, 0]} />
+                        <Bar dataKey="양파" stackId="a" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </>
+              )}
+            </Card>
+          );
+        })()}
+
         <div className="space-y-4">
           {displayGames.map(game => {
             // Apply font size presets inside the game cards
