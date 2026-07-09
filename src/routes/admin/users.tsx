@@ -15,6 +15,7 @@ import {
 } from "@/lib/db";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ScoreStatisticsGraph } from "@/components/ScoreStatisticsGraph";
 import {
   Table,
   TableBody,
@@ -400,6 +401,7 @@ function AdminUsersPage() {
               </div>
             ) : (
               <div className="space-y-6">
+                <ScoreStatisticsGraph games={selectedUserScores} />
                 {selectedUserScores.map((game, i) => (
                   <Card key={game.id || i} className="p-4 shadow-sm border border-slate-100 bg-slate-50/30">
                     <div className="flex justify-between items-center mb-2">
