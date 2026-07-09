@@ -145,11 +145,23 @@ export function ScoreStatisticsGraph({ games, fontSizePreset = 'normal' }: Score
     }
     return null;
   };
+  const dateRange = useMemo(() => {
+    if (sortedChartData.length === 0) return null;
+    const start = sortedChartData[0].fullDate;
+    const end = sortedChartData[sortedChartData.length - 1].fullDate;
+    if (start === end) return start;
+    return `${start} ~ ${end}`;
+  }, [sortedChartData]);
 
   return (
     <Card className={containerClass}>
       <div className={titleClass}>
         <span className="flex items-center gap-1.5 shrink-0">📈 스코어 통계 그래프</span>
+        {dateRange && (
+          <span className="flex-1 text-center text-xs sm:text-sm font-medium text-slate-500 px-2 truncate">
+            {dateRange}
+          </span>
+        )}
         <div className={`shrink-0 ${fontSizePreset === "huge" ? "w-full mt-2" : ""}`}>
           <select
             value={activeHoleTab}
