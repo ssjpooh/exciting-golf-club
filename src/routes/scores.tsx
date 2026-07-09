@@ -1326,6 +1326,10 @@ function ScoresPage() {
             <div className="text-center py-10 text-slate-400">아직 등록된 기록이 없습니다.</div>
           )}
         </div>
+        <div className="mt-8 pt-6 border-t border-slate-200/60 flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-400 dark:text-slate-500">
+          <span>🤝 공동 개발자:</span>
+          <span className="text-teal-600/95 font-extrabold bg-teal-50 dark:bg-slate-800 px-2.5 py-0.5 rounded-full shadow-sm">노은주</span>
+        </div>
       </main>
 
       <RecordRoundDialog 

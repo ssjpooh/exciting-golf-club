@@ -238,6 +238,11 @@ function LoginPage() {
           로그인 시 서비스 이용약관 및 <br />
           개인정보 처리방침에 동의하는 것으로 간주됩니다.
         </p>
+
+        <div className="mt-6 pt-4 border-t border-slate-100/80 flex items-center justify-center gap-1.5 text-[11px] font-bold text-slate-400 dark:text-slate-500">
+          <span>🤝 공동 개발자:</span>
+          <span className="text-teal-600/90 font-extrabold bg-teal-50 px-2 py-0.5 rounded-full">노은주</span>
+        </div>
       </Card>
 
       {/* PWA 설치 안내 섹션 */}

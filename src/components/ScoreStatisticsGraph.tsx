@@ -286,11 +286,11 @@ export function ScoreStatisticsGraph({ games, fontSizePreset = 'normal' }: Score
                   tickLine={false}
                 />
                 <ChartTooltip content={<CustomTooltip />} />
-                {visibleLines.totalScore && <Line type="natural" dataKey="overPar" stroke="#8b5cf6" strokeWidth={2} name="오버파 (+/-)" activeDot={{ r: 6 }} dot={{ r: 4 }} />}
-                {visibleLines.birdie && <Line type="natural" dataKey="버디" stroke="#ef4444" strokeWidth={2} name="버디" activeDot={{ r: 6 }} dot={{ r: 4 }} />}
-                {visibleLines.par && <Line type="natural" dataKey="파" stroke="#14b8a6" strokeWidth={2} name="파" activeDot={{ r: 6 }} dot={{ r: 4 }} />}
-                {visibleLines.bogey && <Line type="natural" dataKey="보기" stroke="#f59e0b" strokeWidth={2} name="보기" activeDot={{ r: 6 }} dot={{ r: 4 }} />}
-                {visibleLines.doublePar && <Line type="natural" dataKey="양파" stroke="#3b82f6" strokeWidth={2} name="양파" activeDot={{ r: 6 }} dot={{ r: 4 }} />}
+                {visibleLines.totalScore && <Line type="monotone" dataKey="overPar" stroke="#8b5cf6" strokeWidth={3} name="오버파 (+/-)" activeDot={{ r: 8, strokeWidth: 2, fill: "#ffffff" }} dot={{ r: 5, stroke: "#8b5cf6", strokeWidth: 2, fill: "#ffffff" }} />}
+                {visibleLines.birdie && <Line type="monotone" dataKey="버디" stroke="#ef4444" strokeWidth={3} name="버디" activeDot={{ r: 8, strokeWidth: 2, fill: "#ffffff" }} dot={{ r: 5, stroke: "#ef4444", strokeWidth: 2, fill: "#ffffff" }} />}
+                {visibleLines.par && <Line type="monotone" dataKey="파" stroke="#14b8a6" strokeWidth={3} name="파" activeDot={{ r: 8, strokeWidth: 2, fill: "#ffffff" }} dot={{ r: 5, stroke: "#14b8a6", strokeWidth: 2, fill: "#ffffff" }} />}
+                {visibleLines.bogey && <Line type="monotone" dataKey="보기" stroke="#f59e0b" strokeWidth={3} name="보기" activeDot={{ r: 8, strokeWidth: 2, fill: "#ffffff" }} dot={{ r: 5, stroke: "#f59e0b", strokeWidth: 2, fill: "#ffffff" }} />}
+                {visibleLines.doublePar && <Line type="monotone" dataKey="양파" stroke="#3b82f6" strokeWidth={3} name="양파" activeDot={{ r: 8, strokeWidth: 2, fill: "#ffffff" }} dot={{ r: 5, stroke: "#3b82f6", strokeWidth: 2, fill: "#ffffff" }} />}
               </LineChart>
             </ResponsiveContainer>
           </div>
