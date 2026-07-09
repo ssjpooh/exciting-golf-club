@@ -11,6 +11,18 @@ interface ScoreStatisticsGraphProps {
 export function ScoreStatisticsGraph({ games, fontSizePreset = 'normal' }: ScoreStatisticsGraphProps) {
   const [activeHoleTab, setActiveHoleTab] = useState<'9' | '18'>('18');
 
+  const [visibleLines, setVisibleLines] = useState({
+    totalScore: true,
+    birdie: true,
+    par: true,
+    bogey: true,
+    doublePar: true,
+  });
+
+  const toggleLine = (key: keyof typeof visibleLines) => {
+    setVisibleLines(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
   // 9홀/18홀 별 게임 분류
   const categorizedGames = useMemo(() => {
     return games.filter(g => {
@@ -41,11 +53,15 @@ export function ScoreStatisticsGraph({ games, fontSizePreset = 'normal' }: Score
         const locationShort = g.location ? g.location.split("(")[0].trim().slice(0, 5) : "";
         const label = `${g.date.slice(5)} ${locationShort}`;
 
+        const totalPar = g.holes?.reduce((sum, h) => sum + (Number(h.par) || 0), 0) || (g.holes?.length === 9 ? 36 : 72);
+        const overPar = g.total - totalPar;
+
         return {
           name: label,
           fullDate: g.date,
           location: g.location || "기록 없음",
           totalScore: g.total,
+          overPar: overPar,
           버디: birdies,
           파: pars,
           보기: bogeys,
@@ -115,7 +131,9 @@ export function ScoreStatisticsGraph({ games, fontSizePreset = 'normal' }: Score
         <div className="bg-slate-900/95 text-white p-3 rounded-lg shadow-xl border border-slate-800 text-xs font-bold space-y-1 z-30">
           <p className="text-slate-300 font-extrabold">{data.fullDate}</p>
           <p className="text-[11px] text-teal-400 font-bold truncate max-w-[200px]">{data.location}</p>
-          <p className="text-[11px] text-white font-black border-t border-slate-800 pt-1 mt-1">총 스코어: {data.totalScore}타</p>
+          <p className="text-[11px] text-white font-black border-t border-slate-800 pt-1 mt-1">
+            총 스코어: {data.totalScore}타 <span className="text-violet-400 ml-1">({data.overPar > 0 ? '+' : ''}{data.overPar})</span>
+          </p>
           <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 pt-1 text-[10px]">
             <span className="text-red-400">버디: {data.버디}개</span>
             <span className="text-teal-400">파: {data.파}개</span>
@@ -177,7 +195,65 @@ export function ScoreStatisticsGraph({ games, fontSizePreset = 'normal' }: Score
             </div>
           </div>
 
-          <div className="w-full relative pt-2" style={{ height: chartHeight }}>
+          <div className="flex flex-wrap gap-2 pt-3 justify-center items-center">
+            <button
+              onClick={() => toggleLine('totalScore')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full border transition-all ${
+                visibleLines.totalScore ? 'bg-violet-100 text-violet-700 border-violet-300 shadow-sm' : 'bg-slate-50 text-slate-400 border-slate-200'
+              }`}
+            >
+              <div className={`w-3 h-3 rounded-sm flex items-center justify-center border ${visibleLines.totalScore ? 'bg-violet-600 border-violet-600 text-white' : 'border-slate-300'}`}>
+                {visibleLines.totalScore && <svg viewBox="0 0 14 14" fill="none" className="w-2.5 h-2.5 stroke-current stroke-2"><polyline points="3 7.5 6 10.5 11 3.5"></polyline></svg>}
+              </div>
+              오버파 (+/-)
+            </button>
+            <button
+              onClick={() => toggleLine('birdie')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full border transition-all ${
+                visibleLines.birdie ? 'bg-red-100 text-red-700 border-red-300 shadow-sm' : 'bg-slate-50 text-slate-400 border-slate-200'
+              }`}
+            >
+              <div className={`w-3 h-3 rounded-sm flex items-center justify-center border ${visibleLines.birdie ? 'bg-red-500 border-red-500 text-white' : 'border-slate-300'}`}>
+                {visibleLines.birdie && <svg viewBox="0 0 14 14" fill="none" className="w-2.5 h-2.5 stroke-current stroke-2"><polyline points="3 7.5 6 10.5 11 3.5"></polyline></svg>}
+              </div>
+              버디
+            </button>
+            <button
+              onClick={() => toggleLine('par')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full border transition-all ${
+                visibleLines.par ? 'bg-teal-100 text-teal-700 border-teal-300 shadow-sm' : 'bg-slate-50 text-slate-400 border-slate-200'
+              }`}
+            >
+              <div className={`w-3 h-3 rounded-sm flex items-center justify-center border ${visibleLines.par ? 'bg-teal-500 border-teal-500 text-white' : 'border-slate-300'}`}>
+                {visibleLines.par && <svg viewBox="0 0 14 14" fill="none" className="w-2.5 h-2.5 stroke-current stroke-2"><polyline points="3 7.5 6 10.5 11 3.5"></polyline></svg>}
+              </div>
+              파
+            </button>
+            <button
+              onClick={() => toggleLine('bogey')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full border transition-all ${
+                visibleLines.bogey ? 'bg-amber-100 text-amber-700 border-amber-300 shadow-sm' : 'bg-slate-50 text-slate-400 border-slate-200'
+              }`}
+            >
+              <div className={`w-3 h-3 rounded-sm flex items-center justify-center border ${visibleLines.bogey ? 'bg-amber-500 border-amber-500 text-white' : 'border-slate-300'}`}>
+                {visibleLines.bogey && <svg viewBox="0 0 14 14" fill="none" className="w-2.5 h-2.5 stroke-current stroke-2"><polyline points="3 7.5 6 10.5 11 3.5"></polyline></svg>}
+              </div>
+              보기
+            </button>
+            <button
+              onClick={() => toggleLine('doublePar')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full border transition-all ${
+                visibleLines.doublePar ? 'bg-blue-100 text-blue-700 border-blue-300 shadow-sm' : 'bg-slate-50 text-slate-400 border-slate-200'
+              }`}
+            >
+              <div className={`w-3 h-3 rounded-sm flex items-center justify-center border ${visibleLines.doublePar ? 'bg-blue-500 border-blue-500 text-white' : 'border-slate-300'}`}>
+                {visibleLines.doublePar && <svg viewBox="0 0 14 14" fill="none" className="w-2.5 h-2.5 stroke-current stroke-2"><polyline points="3 7.5 6 10.5 11 3.5"></polyline></svg>}
+              </div>
+              양파
+            </button>
+          </div>
+
+          <div className="w-full relative pt-4" style={{ height: chartHeight }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={sortedChartData}
@@ -198,22 +274,11 @@ export function ScoreStatisticsGraph({ games, fontSizePreset = 'normal' }: Score
                   tickLine={false}
                 />
                 <ChartTooltip content={<CustomTooltip />} />
-                <Legend
-                  verticalAlign="top"
-                  height={36}
-                  iconSize={10}
-                  iconType="circle"
-                  wrapperStyle={{
-                    fontSize: fontSizePreset === "huge" ? 14 : 11,
-                    fontWeight: "bold",
-                    color: "#475569"
-                  }}
-                />
-                <Line type="natural" dataKey="totalScore" stroke="#0d9488" strokeWidth={2} name="총 스코어 (타)" activeDot={{ r: 6 }} dot={{ r: 4 }} />
-                <Line type="natural" dataKey="버디" stroke="#ef4444" strokeWidth={2} name="버디" activeDot={{ r: 6 }} dot={{ r: 4 }} />
-                <Line type="natural" dataKey="파" stroke="#14b8a6" strokeWidth={2} name="파" activeDot={{ r: 6 }} dot={{ r: 4 }} />
-                <Line type="natural" dataKey="보기" stroke="#f59e0b" strokeWidth={2} name="보기" activeDot={{ r: 6 }} dot={{ r: 4 }} />
-                <Line type="natural" dataKey="양파" stroke="#3b82f6" strokeWidth={2} name="양파" activeDot={{ r: 6 }} dot={{ r: 4 }} />
+                {visibleLines.totalScore && <Line type="natural" dataKey="overPar" stroke="#8b5cf6" strokeWidth={2} name="오버파 (+/-)" activeDot={{ r: 6 }} dot={{ r: 4 }} />}
+                {visibleLines.birdie && <Line type="natural" dataKey="버디" stroke="#ef4444" strokeWidth={2} name="버디" activeDot={{ r: 6 }} dot={{ r: 4 }} />}
+                {visibleLines.par && <Line type="natural" dataKey="파" stroke="#14b8a6" strokeWidth={2} name="파" activeDot={{ r: 6 }} dot={{ r: 4 }} />}
+                {visibleLines.bogey && <Line type="natural" dataKey="보기" stroke="#f59e0b" strokeWidth={2} name="보기" activeDot={{ r: 6 }} dot={{ r: 4 }} />}
+                {visibleLines.doublePar && <Line type="natural" dataKey="양파" stroke="#3b82f6" strokeWidth={2} name="양파" activeDot={{ r: 6 }} dot={{ r: 4 }} />}
               </LineChart>
             </ResponsiveContainer>
           </div>
