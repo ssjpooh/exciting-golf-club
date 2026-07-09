@@ -1316,8 +1316,12 @@ function ScoresPage() {
                             color: "#475569"
                           }}
                         />
-                        {/* 점과 선으로만 표현하는 라인 그래프 (총 스코어) */}
+                        {/* 점과 선으로만 표현하는 라인 그래프 (총 스코어 및 세부 항목) */}
                         <Line type="natural" dataKey="totalScore" stroke="#0d9488" strokeWidth={2} name="총 스코어 (타)" activeDot={{ r: 6 }} dot={{ r: 4 }} />
+                        <Line type="natural" dataKey="버디" stroke="#ef4444" strokeWidth={2} name="버디" activeDot={{ r: 6 }} dot={{ r: 4 }} />
+                        <Line type="natural" dataKey="파" stroke="#14b8a6" strokeWidth={2} name="파" activeDot={{ r: 6 }} dot={{ r: 4 }} />
+                        <Line type="natural" dataKey="보기" stroke="#f59e0b" strokeWidth={2} name="보기" activeDot={{ r: 6 }} dot={{ r: 4 }} />
+                        <Line type="natural" dataKey="양파" stroke="#3b82f6" strokeWidth={2} name="양파" activeDot={{ r: 6 }} dot={{ r: 4 }} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
