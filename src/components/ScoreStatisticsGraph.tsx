@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, Legend, ResponsiveContainer } from "recharts";
 import { Card } from "@/components/ui/card";
-import { Score, RoundTypeCode } from "@/lib/db";
+import { Score } from "@/lib/db";
 
 interface ScoreStatisticsGraphProps {
   games: Score[];
@@ -10,8 +10,6 @@ interface ScoreStatisticsGraphProps {
 
 export function ScoreStatisticsGraph({ games, fontSizePreset = 'normal' }: ScoreStatisticsGraphProps) {
   const [activeHoleTab, setActiveHoleTab] = useState<'9' | '18'>('18');
-  // 라운딩 타입 필터 (전체 / 필드 / 스크린)
-  const [roundTypeFilter, setRoundTypeFilter] = useState<'all' | RoundTypeCode>('all');
 
   const [visibleLines, setVisibleLines] = useState({
     totalScore: true,
@@ -25,22 +23,17 @@ export function ScoreStatisticsGraph({ games, fontSizePreset = 'normal' }: Score
     setVisibleLines(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // 9홀/18홀 별 + 라운딩 타입별 게임 분류
+  // 9홀/18홀 별 게임 분류
   const categorizedGames = useMemo(() => {
     return games.filter(g => {
       const holeCount = g.holes?.length || 0;
-      const holeMatch = activeHoleTab === '9' ? holeCount === 9 : holeCount === 18;
-      if (!holeMatch) return false;
-
-      // 라운딩 타입 필터 ('all'이면 통과, 아니면 코드 일치 여부로 판별)
-      if (roundTypeFilter !== 'all') {
-        // roundType이 없는 과거 기록은 '필드'로 간주
-        const gameRoundType = g.roundType ?? 'field';
-        if (gameRoundType !== roundTypeFilter) return false;
+      if (activeHoleTab === '9') {
+        return holeCount === 9;
+      } else {
+        return holeCount === 18;
       }
-      return true;
     });
-  }, [games, activeHoleTab, roundTypeFilter]);
+  }, [games, activeHoleTab]);
 
   // 날짜 기준 오름차순 정렬 및 데이터 매핑
   const sortedChartData = useMemo(() => {
@@ -169,45 +162,29 @@ export function ScoreStatisticsGraph({ games, fontSizePreset = 'normal' }: Score
             {dateRange}
           </span>
         )}
-        <div className={`shrink-0 flex gap-2 ${fontSizePreset === "huge" ? "w-full mt-2" : ""}`}>
-          {(() => {
-            const selectClass = `rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 font-bold cursor-pointer outline-none transition-colors ${
+        <div className={`shrink-0 ${fontSizePreset === "huge" ? "w-full mt-2" : ""}`}>
+          <select
+            value={activeHoleTab}
+            onChange={(e) => setActiveHoleTab(e.target.value as '9' | '18')}
+            className={`rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 font-bold cursor-pointer outline-none transition-colors ${
               fontSizePreset === "huge"
-                ? "h-14 text-lg flex-1"
+                ? "h-14 text-lg w-full"
                 : fontSizePreset === "large"
                   ? "h-11 text-base w-32"
                   : fontSizePreset === "medium"
                     ? "h-9 text-sm w-28"
                     : "h-8 text-xs w-24"
-            }`;
-            return (
-              <>
-                <select
-                  value={roundTypeFilter}
-                  onChange={(e) => setRoundTypeFilter(e.target.value as 'all' | RoundTypeCode)}
-                  className={selectClass}
-                >
-                  <option value="all">전체</option>
-                  <option value="field">필드</option>
-                  <option value="screen">스크린</option>
-                </select>
-                <select
-                  value={activeHoleTab}
-                  onChange={(e) => setActiveHoleTab(e.target.value as '9' | '18')}
-                  className={selectClass}
-                >
-                  <option value="18">18홀 게임</option>
-                  <option value="9">9홀 게임</option>
-                </select>
-              </>
-            );
-          })()}
+            }`}
+          >
+            <option value="18">18홀 게임</option>
+            <option value="9">9홀 게임</option>
+          </select>
         </div>
       </div>
 
       {totalGamesCount === 0 ? (
         <div className="text-center py-6 text-slate-400 text-xs font-bold border border-dashed rounded-xl">
-          해당 기간 내의 {roundTypeFilter === 'field' ? '필드 ' : roundTypeFilter === 'screen' ? '스크린 ' : ''}{activeHoleTab}홀 라운드 기록이 없습니다.
+          해당 기간 내의 {activeHoleTab}홀 라운드 기록이 없습니다.
         </div>
       ) : (
         <>

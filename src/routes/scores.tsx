@@ -821,6 +821,8 @@ function ScoresPage() {
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
   const [fontSizePreset, setFontSizePreset] = useState<'normal' | 'medium' | 'large' | 'huge'>('normal');
   const [activeHoleTab, setActiveHoleTab] = useState<'9' | '18'>('18');
+  // 라운딩 타입 필터 (전체 / 필드 / 스크린) - 통계 그래프와 기록 리스트에 공통 적용
+  const [roundTypeFilter, setRoundTypeFilter] = useState<'all' | RoundTypeCode>('all');
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (currentUser) => {
@@ -872,8 +874,12 @@ function ScoresPage() {
     if (endDate) {
       filtered = filtered.filter(g => g.date <= endDate);
     }
+    // 라운딩 타입 필터 (roundType 없는 과거 기록은 '필드'로 간주) - 통계·리스트 공통 적용
+    if (roundTypeFilter !== 'all') {
+      filtered = filtered.filter(g => (g.roundType ?? 'field') === roundTypeFilter);
+    }
     return filtered;
-  }, [games, courseId, startDate, endDate]);
+  }, [games, courseId, startDate, endDate, roundTypeFilter]);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -1023,54 +1029,27 @@ function ScoresPage() {
               let h2Class = "text-lg font-bold";
               let btnClass = "bg-teal-600 font-bold";
               let btnIconSize = "w-4 h-4 mr-1";
-              let wrapperClass = "flex items-center justify-end gap-1.5 bg-slate-50 border p-2 rounded-lg";
-              let selectLabelClass = "text-xs font-extrabold text-slate-600";
-              let selectClass = "flex h-7 w-24 rounded border border-input bg-white px-2 py-0.5 text-xs font-bold shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer";
 
               if (fontSizePreset === "medium") {
                 h2Class = "text-xl font-bold";
                 btnClass = "bg-teal-600 text-sm h-9 px-3 font-bold";
-                selectLabelClass = "text-sm font-extrabold text-slate-600";
-                selectClass = "flex h-8 w-28 rounded border border-input bg-white px-2.5 py-0.5 text-sm font-bold cursor-pointer";
               } else if (fontSizePreset === "large") {
                 h2Class = "text-2xl font-black";
                 btnClass = "bg-teal-600 text-base h-11 px-4 font-black";
                 btnIconSize = "w-5 h-5 mr-1";
-                wrapperClass = "flex items-center justify-end gap-2 bg-slate-100 border p-2.5 rounded-lg";
-                selectLabelClass = "text-base font-black text-slate-700";
-                selectClass = "flex h-10 w-32 rounded border border-input bg-white px-3 py-1 text-base font-black cursor-pointer";
               } else if (fontSizePreset === "huge") {
                 h2Class = "text-[28px] font-black leading-tight";
                 btnClass = "bg-teal-600 text-[20px] h-14 px-6 font-black rounded-xl";
                 btnIconSize = "w-6 h-6 mr-1.5";
-                wrapperClass = "flex items-center justify-end gap-3 bg-slate-150 border-2 border-slate-200 p-3 rounded-xl";
-                selectLabelClass = "text-[18px] font-black text-slate-800";
-                selectClass = "flex h-12 w-40 rounded-lg border-2 border-input bg-white px-4 py-1 text-[18px] font-black cursor-pointer";
               }
 
               return (
-                <>
-                  <div className="flex justify-between items-center">
-                    <h2 className={h2Class}>내 라운드 기록</h2>
-                    <Button onClick={() => navigate({ to: "/select-course" })} className={btnClass}>
-                      <Plus className={btnIconSize} />기록 추가
-                    </Button>
-                  </div>
-                  {/* 글자 크기 선택 조절 바 (타이틀/기록추가 아래 배치) */}
-                  <div className={wrapperClass}>
-                    <Label className={selectLabelClass}>입력 창 글자 크기:</Label>
-                    <select
-                      value={fontSizePreset}
-                      onChange={e => setFontSizePreset(e.target.value as any)}
-                      className={selectClass}
-                    >
-                      <option value="normal">보통</option>
-                      <option value="medium">중간</option>
-                      <option value="large">크게</option>
-                      <option value="huge">아주 크게</option>
-                    </select>
-                  </div>
-                </>
+                <div className="flex justify-between items-center">
+                  <h2 className={h2Class}>내 라운드 기록</h2>
+                  <Button onClick={() => navigate({ to: "/select-course" })} className={btnClass}>
+                    <Plus className={btnIconSize} />기록 추가
+                  </Button>
+                </div>
               );
             })()}
           </div>
@@ -1172,6 +1151,59 @@ function ScoresPage() {
           );
         })()}
 
+        {/* 조회 옵션 바: 입력 창 글자 크기 + 라운딩 타입 필터 (시작/종료일 필터 바로 아래 배치) */}
+        {(() => {
+          let barClass = "p-2.5 bg-slate-50 border border-slate-150 shadow-sm flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between";
+          let labelClass = "text-xs font-extrabold text-slate-600 shrink-0";
+          let selectClass = "flex h-8 rounded border border-input bg-white px-2 py-0.5 text-xs font-bold shadow-sm cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-ring";
+
+          if (fontSizePreset === "medium") {
+            barClass = "p-3 bg-slate-50 border border-slate-150 shadow-sm flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between";
+            labelClass = "text-sm font-extrabold text-slate-600 shrink-0";
+            selectClass = "flex h-9 rounded border border-input bg-white px-2.5 py-0.5 text-sm font-bold cursor-pointer outline-none";
+          } else if (fontSizePreset === "large") {
+            barClass = "p-4 bg-slate-100 border border-slate-200 shadow-md flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between";
+            labelClass = "text-base font-black text-slate-700 shrink-0";
+            selectClass = "flex h-11 rounded border border-input bg-white px-3 py-1 text-base font-black cursor-pointer outline-none";
+          } else if (fontSizePreset === "huge") {
+            barClass = "p-5 bg-slate-100 border-2 border-slate-200 shadow-lg flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between";
+            labelClass = "text-[18px] font-black text-slate-800 shrink-0";
+            selectClass = "flex h-14 rounded-lg border-2 border-input bg-white px-4 py-1 text-[18px] font-black cursor-pointer outline-none";
+          }
+
+          return (
+            <Card className={barClass}>
+              {/* 입력 창 글자 크기 */}
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Label className={labelClass}>입력 창 글자 크기</Label>
+                <select
+                  value={fontSizePreset}
+                  onChange={e => setFontSizePreset(e.target.value as any)}
+                  className={`${selectClass} flex-1 sm:flex-none sm:w-32`}
+                >
+                  <option value="normal">보통</option>
+                  <option value="medium">중간</option>
+                  <option value="large">크게</option>
+                  <option value="huge">아주 크게</option>
+                </select>
+              </div>
+              {/* 라운딩 타입 필터 (통계 그래프 + 기록 리스트에 적용) */}
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Label className={labelClass}>라운딩 타입</Label>
+                <select
+                  value={roundTypeFilter}
+                  onChange={e => setRoundTypeFilter(e.target.value as 'all' | RoundTypeCode)}
+                  className={`${selectClass} flex-1 sm:flex-none sm:w-32`}
+                >
+                  <option value="all">전체</option>
+                  <option value="field">필드</option>
+                  <option value="screen">스크린</option>
+                </select>
+              </div>
+            </Card>
+          );
+        })()}
+
         {/* ⛳ 9홀/18홀 게임별 파, 버디, 보기, 양파 수치 통계 그래프 영역 */}
         <ScoreStatisticsGraph games={displayGames} fontSizePreset={fontSizePreset} />
 
@@ -1237,6 +1269,14 @@ function ScoresPage() {
                   <span className={cardDateText}>{game.date}</span>
                   <div className="flex items-center gap-2">
                     <span className={cardHeaderBadge}>
+                      {(() => {
+                        const isScreen = (game.roundType ?? "field") === "screen";
+                        return (
+                          <span className={`mr-1.5 font-black ${isScreen ? "text-indigo-600" : "text-emerald-600"}`}>
+                            [{isScreen ? "스크린" : "필드"}]
+                          </span>
+                        );
+                      })()}
                       그로스(기본): {game.total}타
                     </span>
                     {((game.handicap !== undefined && game.handicap > 0) || (game.handicapType === "hole" && game.holes?.some(h => (h.handicap || 0) > 0))) && game.handicapType !== "none" && (
