@@ -170,24 +170,26 @@ export function ScoreStatisticsGraph({ games, fontSizePreset = 'normal', roundTy
   return (
     <Card className={containerClass}>
       <div className={titleClass}>
-        {/* 라운딩 타입 선택 버튼 + 선택값이 반영된 동적 제목 */}
+        {/* 선택된 라운딩 타입이 반영된 동적 제목 (필터 버튼은 조회 옵션 바에 위치) */}
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
-          <div className="inline-flex rounded-md border border-input bg-white overflow-hidden shadow-sm">
-            {roundTypeOptions.map((opt, i) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => onRoundTypeChange?.(opt.value)}
-                className={`${segBtnClass} ${i > 0 ? "border-l border-input" : ""} ${
-                  roundTypeFilter === opt.value
-                    ? "bg-teal-600 text-white"
-                    : "text-slate-600 hover:bg-slate-50"
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
+          {onRoundTypeChange && (
+            <div className="inline-flex rounded-md border border-input bg-white overflow-hidden shadow-sm">
+              {roundTypeOptions.map((opt, i) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => onRoundTypeChange(opt.value)}
+                  className={`${segBtnClass} ${i > 0 ? "border-l border-input" : ""} ${
+                    roundTypeFilter === opt.value
+                      ? "bg-teal-600 text-white"
+                      : "text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
           <span className="flex items-center gap-1.5">📈 {selectedTypeName} 스코어 통계</span>
         </div>
         {dateRange && (
