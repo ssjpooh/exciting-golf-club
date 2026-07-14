@@ -13,6 +13,8 @@ import {
   saveGolfCourseToDb,
   updateUserProfile,
   updateSavedScore,
+  ROUND_TYPES,
+  RoundTypeCode,
 } from "@/lib/db";
 import { getCourseDetails } from "@/lib/golfApi";
 import { Card } from "@/components/ui/card";
@@ -86,6 +88,7 @@ function RecordRoundDialog({
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [location, setLocation] = useState(courseInfo?.name || "");
   const [courseSection, setCourseSection] = useState("");
+  const [roundType, setRoundType] = useState<RoundTypeCode>("field");
   const [memo, setMemo] = useState("");
   const [holes, setHoles] = useState<HoleScore[]>([]);
   const [handicapInput, setHandicapInput] = useState<number | "">(0);
@@ -111,7 +114,8 @@ function RecordRoundDialog({
         }
         setLocation(loc);
         setCourseSection(sec);
-        
+        setRoundType(initialData.roundType ?? "field");
+
         setDate(initialData.date);
         setMemo(initialData.memo || "");
         
@@ -131,6 +135,7 @@ function RecordRoundDialog({
       setHandicapInput(defaultHandicap);
       setHandicapType("none");
       setCourseSection(""); // Reset course section for new entry
+      setRoundType("field"); // 신규 입력 시 기본값: 필드
       setLocation(courseInfo?.name || "");
       setDate(new Date().toISOString().slice(0, 10));
 
@@ -277,6 +282,7 @@ function RecordRoundDialog({
         handicap: hcpInputVal,
         netScore: finalNetScore,
         handicapType,
+        roundType,
       });
       onOpenChange(false);
     } catch (err) {
@@ -412,12 +418,32 @@ function RecordRoundDialog({
                   </div>
                   <div>
                     <Label className="text-xs font-bold text-slate-500">코스/코스조합 이름 (선택)</Label>
-                    <Input 
-                      value={courseSection} 
-                      onChange={e => setCourseSection(e.target.value)} 
-                      placeholder="예: 동/서 코스, 아웃코스" 
-                      className="mt-1" 
+                    <Input
+                      value={courseSection}
+                      onChange={e => setCourseSection(e.target.value)}
+                      placeholder="예: 동/서 코스, 아웃코스"
+                      className="mt-1"
                     />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Label className="text-xs font-bold text-slate-500">라운딩 종류</Label>
+                    <div className="flex gap-2 mt-1">
+                      {ROUND_TYPES.map(rt => (
+                        <Button
+                          key={rt.code}
+                          type="button"
+                          variant={roundType === rt.code ? "default" : "outline"}
+                          onClick={() => setRoundType(rt.code)}
+                          className={`flex-1 h-9 text-sm font-bold transition-all ${
+                            roundType === rt.code
+                              ? "bg-teal-600 hover:bg-teal-700 text-white shadow-sm"
+                              : "hover:bg-slate-50 border-slate-200"
+                          }`}
+                        >
+                          {rt.name}
+                        </Button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -534,13 +560,33 @@ function RecordRoundDialog({
                   </div>
                   <div>
                     <Label className="text-xs font-bold text-slate-500">코스/코스조합 이름 (선택)</Label>
-                    <Input 
-                      value={courseSection} 
-                      onChange={e => setCourseSection(e.target.value)} 
-                      placeholder="예: 동/서 코스, 아웃코스" 
+                    <Input
+                      value={courseSection}
+                      onChange={e => setCourseSection(e.target.value)}
+                      placeholder="예: 동/서 코스, 아웃코스"
                       className="mt-1 bg-white h-9"
                       disabled={!isNewCourse}
                     />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Label className="text-xs font-bold text-slate-500">라운딩 종류</Label>
+                    <div className="flex gap-2 mt-1">
+                      {ROUND_TYPES.map(rt => (
+                        <Button
+                          key={rt.code}
+                          type="button"
+                          variant={roundType === rt.code ? "default" : "outline"}
+                          onClick={() => setRoundType(rt.code)}
+                          className={`flex-1 h-9 text-sm font-bold transition-all ${
+                            roundType === rt.code
+                              ? "bg-teal-600 hover:bg-teal-700 text-white shadow-sm"
+                              : "bg-white hover:bg-slate-50 border-slate-200"
+                          }`}
+                        >
+                          {rt.name}
+                        </Button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>

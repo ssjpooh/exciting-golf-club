@@ -49,8 +49,17 @@ export type Score = {
   handicap?: number;
   netScore?: number;
   handicapType?: "none" | "total" | "hole" | "both";
+  roundType?: RoundTypeCode;
   createdAt?: unknown;
 };
+
+// 라운딩 종류 (필드 / 스크린) - 저장은 코드로, 표시는 코드명으로
+export type RoundTypeCode = "field" | "screen";
+
+export const ROUND_TYPES: { code: RoundTypeCode; name: string }[] = [
+  { code: "field", name: "필드" },
+  { code: "screen", name: "스크린" },
+];
 
 export type GolfCourseHole = {
   hole: number;
