@@ -1,15 +1,25 @@
 import { useState, useMemo } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, Legend, ResponsiveContainer } from "recharts";
 import { Card } from "@/components/ui/card";
-import { Score } from "@/lib/db";
+import { Score, RoundTypeCode } from "@/lib/db";
 
 interface ScoreStatisticsGraphProps {
   games: Score[];
   fontSizePreset?: 'normal' | 'medium' | 'large' | 'huge';
+  // 라운딩 타입 필터 (전체/필드/스크린) - 부모에서 상태 제어
+  roundTypeFilter?: 'all' | RoundTypeCode;
+  onRoundTypeChange?: (value: 'all' | RoundTypeCode) => void;
 }
 
-export function ScoreStatisticsGraph({ games, fontSizePreset = 'normal' }: ScoreStatisticsGraphProps) {
+export function ScoreStatisticsGraph({ games, fontSizePreset = 'normal', roundTypeFilter = 'all', onRoundTypeChange }: ScoreStatisticsGraphProps) {
   const [activeHoleTab, setActiveHoleTab] = useState<'9' | '18'>('18');
+
+  const roundTypeOptions: { value: 'all' | RoundTypeCode; label: string }[] = [
+    { value: "all", label: "전체" },
+    { value: "field", label: "필드" },
+    { value: "screen", label: "스크린" },
+  ];
+  const selectedTypeName = roundTypeFilter === "field" ? "필드" : roundTypeFilter === "screen" ? "스크린" : "전체";
 
   const [visibleLines, setVisibleLines] = useState({
     totalScore: true,
@@ -93,8 +103,9 @@ export function ScoreStatisticsGraph({ games, fontSizePreset = 'normal' }: Score
 
   // 폰트 크기 프리셋에 따른 클래스 적용
   let containerClass = "p-4 bg-white border border-slate-100 shadow-sm rounded-xl space-y-4";
-  let titleClass = "text-sm font-bold text-slate-800 flex items-center justify-between";
+  let titleClass = "text-sm font-bold text-slate-800 flex items-center gap-2 flex-wrap justify-between";
   let tabBtnClass = "h-8 px-3 text-xs font-bold rounded-lg transition-all";
+  let segBtnClass = "h-8 px-2.5 text-xs font-bold transition-colors";
   let summaryGridClass = "grid grid-cols-4 gap-2 text-center";
   let summaryLabelClass = "text-[10px] font-bold text-slate-500 uppercase";
   let summaryValClass = "text-base font-black";
@@ -102,22 +113,25 @@ export function ScoreStatisticsGraph({ games, fontSizePreset = 'normal' }: Score
 
   if (fontSizePreset === "medium") {
     containerClass = "p-5 bg-white border border-slate-100 shadow-sm rounded-xl space-y-4.5";
-    titleClass = "text-base font-bold text-slate-800 flex items-center justify-between";
+    titleClass = "text-base font-bold text-slate-800 flex items-center gap-2 flex-wrap justify-between";
     tabBtnClass = "h-9 px-4 text-sm font-bold rounded-lg transition-all";
+    segBtnClass = "h-9 px-3 text-sm font-bold transition-colors";
     summaryLabelClass = "text-xs font-bold text-slate-500 uppercase";
     summaryValClass = "text-lg font-black";
     chartHeight = 260;
   } else if (fontSizePreset === "large") {
     containerClass = "p-6 bg-white border border-slate-200 shadow-md rounded-2xl space-y-5";
-    titleClass = "text-lg font-black text-slate-800 flex items-center justify-between";
+    titleClass = "text-lg font-black text-slate-800 flex items-center gap-2.5 flex-wrap justify-between";
     tabBtnClass = "h-11 px-5 text-base font-black rounded-xl transition-all";
+    segBtnClass = "h-11 px-4 text-base font-black transition-colors";
     summaryLabelClass = "text-sm font-black text-slate-600 uppercase";
     summaryValClass = "text-xl font-black";
     chartHeight = 300;
   } else if (fontSizePreset === "huge") {
     containerClass = "p-7 bg-white border-2 border-slate-200 shadow-lg rounded-2xl space-y-6";
-    titleClass = "text-xl sm:text-2xl font-black text-slate-800 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between";
+    titleClass = "text-xl sm:text-2xl font-black text-slate-800 flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap sm:justify-between";
     tabBtnClass = "h-14 px-6 text-lg sm:text-xl font-black rounded-xl transition-all flex-1 text-center";
+    segBtnClass = "h-14 px-4 text-lg sm:text-xl font-black transition-colors";
     summaryGridClass = "grid grid-cols-2 sm:grid-cols-4 gap-3 text-center";
     summaryLabelClass = "text-base font-black text-slate-600 uppercase";
     summaryValClass = "text-2xl font-black";
@@ -156,7 +170,26 @@ export function ScoreStatisticsGraph({ games, fontSizePreset = 'normal' }: Score
   return (
     <Card className={containerClass}>
       <div className={titleClass}>
-        <span className="flex items-center gap-1.5 shrink-0">📈 스코어 통계 그래프</span>
+        {/* 라운딩 타입 선택 버튼 + 선택값이 반영된 동적 제목 */}
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          <div className="inline-flex rounded-md border border-input bg-white overflow-hidden shadow-sm">
+            {roundTypeOptions.map((opt, i) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => onRoundTypeChange?.(opt.value)}
+                className={`${segBtnClass} ${i > 0 ? "border-l border-input" : ""} ${
+                  roundTypeFilter === opt.value
+                    ? "bg-teal-600 text-white"
+                    : "text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <span className="flex items-center gap-1.5">📈 {selectedTypeName} 스코어 통계</span>
+        </div>
         {dateRange && (
           <span className="flex-1 text-center text-xs sm:text-sm font-medium text-slate-500 px-2 truncate">
             {dateRange}
@@ -184,7 +217,7 @@ export function ScoreStatisticsGraph({ games, fontSizePreset = 'normal' }: Score
 
       {totalGamesCount === 0 ? (
         <div className="text-center py-6 text-slate-400 text-xs font-bold border border-dashed rounded-xl">
-          해당 기간 내의 {activeHoleTab}홀 라운드 기록이 없습니다.
+          해당 기간 내의 {roundTypeFilter !== "all" ? `${selectedTypeName} ` : ""}{activeHoleTab}홀 라운드 기록이 없습니다.
         </div>
       ) : (
         <>

@@ -1151,35 +1151,25 @@ function ScoresPage() {
           );
         })()}
 
-        {/* 조회 옵션 바: 입력 창 글자 크기 + 라운딩 타입 필터 (시작/종료일 필터 바로 아래 배치) */}
+        {/* 조회 옵션 바: 입력 창 글자 크기 (라운딩 타입 필터는 통계 그래프 제목 앞으로 이동) */}
         {(() => {
           let barClass = "p-2.5 bg-slate-50 border border-slate-150 shadow-sm flex flex-row flex-wrap items-center gap-x-5 gap-y-2";
           let labelClass = "text-xs font-extrabold text-slate-600 shrink-0";
           let selectClass = "flex h-8 rounded border border-input bg-white px-2 py-0.5 text-xs font-bold shadow-sm cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-ring";
-          let segBtnClass = "h-8 px-3 text-xs font-bold transition-colors";
 
           if (fontSizePreset === "medium") {
             barClass = "p-3 bg-slate-50 border border-slate-150 shadow-sm flex flex-row flex-wrap items-center gap-x-5 gap-y-2.5";
             labelClass = "text-sm font-extrabold text-slate-600 shrink-0";
             selectClass = "flex h-9 rounded border border-input bg-white px-2.5 py-0.5 text-sm font-bold cursor-pointer outline-none";
-            segBtnClass = "h-9 px-3.5 text-sm font-bold transition-colors";
           } else if (fontSizePreset === "large") {
             barClass = "p-4 bg-slate-100 border border-slate-200 shadow-md flex flex-row flex-wrap items-center gap-x-6 gap-y-3";
             labelClass = "text-base font-black text-slate-700 shrink-0";
             selectClass = "flex h-11 rounded border border-input bg-white px-3 py-1 text-base font-black cursor-pointer outline-none";
-            segBtnClass = "h-11 px-4 text-base font-black transition-colors";
           } else if (fontSizePreset === "huge") {
             barClass = "p-5 bg-slate-100 border-2 border-slate-200 shadow-lg flex flex-row flex-wrap items-center gap-x-6 gap-y-4";
             labelClass = "text-[18px] font-black text-slate-800 shrink-0";
             selectClass = "flex h-14 rounded-lg border-2 border-input bg-white px-4 py-1 text-[18px] font-black cursor-pointer outline-none";
-            segBtnClass = "h-14 px-5 text-[18px] font-black transition-colors";
           }
-
-          const roundTypeOptions: { value: 'all' | RoundTypeCode; label: string }[] = [
-            { value: "all", label: "전체" },
-            { value: "field", label: "필드" },
-            { value: "screen", label: "스크린" },
-          ];
 
           return (
             <Card className={barClass}>
@@ -1197,32 +1187,17 @@ function ScoresPage() {
                   <option value="huge">아주 크게</option>
                 </select>
               </div>
-              {/* 라운딩 타입 필터 (자주 토글 → 세그먼트 버튼, 통계 그래프 + 기록 리스트에 적용) */}
-              <div className="flex items-center gap-2">
-                <Label className={labelClass}>라운딩 타입</Label>
-                <div className="inline-flex rounded-md border border-input bg-white overflow-hidden shadow-sm">
-                  {roundTypeOptions.map((opt, i) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setRoundTypeFilter(opt.value)}
-                      className={`${segBtnClass} ${i > 0 ? "border-l border-input" : ""} ${
-                        roundTypeFilter === opt.value
-                          ? "bg-teal-600 text-white"
-                          : "text-slate-600 hover:bg-slate-50"
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </Card>
           );
         })()}
 
-        {/* ⛳ 9홀/18홀 게임별 파, 버디, 보기, 양파 수치 통계 그래프 영역 */}
-        <ScoreStatisticsGraph games={displayGames} fontSizePreset={fontSizePreset} />
+        {/* ⛳ 9홀/18홀 게임별 파, 버디, 보기, 양파 수치 통계 그래프 영역 (라운딩 타입 필터 포함) */}
+        <ScoreStatisticsGraph
+          games={displayGames}
+          fontSizePreset={fontSizePreset}
+          roundTypeFilter={roundTypeFilter}
+          onRoundTypeChange={setRoundTypeFilter}
+        />
 
         <div className="space-y-4">
           {displayGames.map(game => {
