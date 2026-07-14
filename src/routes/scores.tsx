@@ -844,7 +844,7 @@ function ScoresPage() {
   useEffect(() => {
     if (courseId && !isLoading) {
       const previousGame = games.find(g => g.courseId === courseId);
-      
+
       getCourseDetails(courseId, courseName).then(info => {
         if (previousGame && previousGame.holes) {
           // 이전 기록이 있다면 그 기록의 파(Par) 정보를 재사용합니다.
@@ -855,6 +855,9 @@ function ScoresPage() {
         }
         setCourseInfo(info);
       }).catch(console.error);
+    } else if (!courseId) {
+      // 홈으로(전체기록) 이동 시: 선택된 코스 정보를 비워 첫 로그인과 동일한 '내 라운드 기록' 화면으로 되돌립니다.
+      setCourseInfo(null);
     }
   }, [courseId, courseName, isLoading, games]);
 
