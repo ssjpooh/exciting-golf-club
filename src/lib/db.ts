@@ -365,9 +365,9 @@ export async function createOrUpdateUser(user: {
       updateData.role = "super_admin";
     }
 
-    if (!existingData.nickname || existingData.nickname === "볼링러" || existingData.nickname === "회원") {
+    if (!existingData.nickname || existingData.nickname === "회원") {
       const fallbackNickname = user.displayName || user.email?.split("@")[0];
-      if (fallbackNickname && fallbackNickname !== "볼링러" && fallbackNickname !== "회원") {
+      if (fallbackNickname && fallbackNickname !== "회원") {
         updateData.nickname = fallbackNickname;
       }
     }

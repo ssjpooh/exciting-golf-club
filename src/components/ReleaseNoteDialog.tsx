@@ -36,7 +36,7 @@ export function ReleaseNoteDialog() {
       <DialogContent className="sm:max-w-md bg-white rounded-2xl overflow-hidden border-none shadow-2xl p-0">
         <DialogHeader className="sr-only">
           <DialogTitle>새로운 소식</DialogTitle>
-          <div id="dialog-description">익사이팅 볼링 클럽 업데이트 내역</div>
+          <div id="dialog-description">익사이팅 골프 클럽 업데이트 내역</div>
         </DialogHeader>
         <div className="bg-gradient-to-r from-teal-500 to-teal-600 px-6 py-8 text-center relative overflow-hidden" aria-describedby="dialog-description">
           <div className="absolute top-0 right-0 p-4 opacity-20">
@@ -47,7 +47,7 @@ export function ReleaseNoteDialog() {
             새로운 소식
           </h2>
           <p className="text-teal-50 font-medium relative z-10">
-            익사이팅 볼링 클럽이 업데이트 되었습니다!
+            익사이팅 골프 클럽이 업데이트 되었습니다!
           </p>
           <div className="mt-4 inline-block bg-white/20 px-3 py-1 rounded-full text-white font-bold text-sm backdrop-blur-sm relative z-10">
             v{latestRelease.version}
