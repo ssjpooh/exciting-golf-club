@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { signInWithGoogle, signInWithApple, signInAnonymouslyUser } from "@/lib/auth/providers";
+import { signInWithApple, signInAnonymouslyUser } from "@/lib/auth/providers";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { Plus, LogOut } from "lucide-react";
@@ -105,26 +105,12 @@ function LoginPage() {
     }
   };
 
-  const isKakao = () => {
-    if (typeof window === "undefined") return false;
-    return /KAKAOTALK/i.test(navigator.userAgent);
-  };
-
   const handleSocialLogin = async (provider: Provider) => {
     if (isLoading) return;
 
-    if (provider === "google" && isKakao()) {
-      const url = window.location.href;
-      window.location.href = `kakaotalk://web/openExternalApp?url=${encodeURIComponent(url)}`;
-      return;
-    }
-
     setIsLoading(true);
     try {
-      if (provider === "google") {
-        await signInWithGoogle();
-        // onAuthStateChanged에서 감지하여 이동/설정 처리하므로 별도 navigate 제거
-      } else if (provider === "apple") {
+      if (provider === "apple") {
         await signInWithApple();
       } else if (provider === "kakao") {
         const redirectUri = `${window.location.origin}/oauth/callback/kakao`;
@@ -218,12 +204,6 @@ function LoginPage() {
               isLoading={isLoading}
             />
             */}
-            <SocialButton
-              provider="google"
-              label="구글 계정으로 시작하기"
-              onClick={() => handleSocialLogin("google")}
-              isLoading={isLoading}
-            />
             {/* 애플 개발자 계정이 없으므로 임시로 숨김 처리 */}
             {/* <SocialButton
               provider="apple"
