@@ -21,7 +21,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogOut, Plus, MapPin, Check, Menu } from "lucide-react";
+import { LogOut, Plus, MapPin, Check, Menu, Settings, UserPlus } from "lucide-react";
+import { inviteFriendsViaKakao } from "@/lib/kakao";
 import {
   Dialog,
   DialogContent,
@@ -819,6 +820,7 @@ function ScoresPage() {
   });
   const [endDate, setEndDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
+  const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
   const [fontSizePreset, setFontSizePreset] = useState<'normal' | 'medium' | 'large' | 'huge'>('normal');
   const [activeHoleTab, setActiveHoleTab] = useState<'9' | '18'>('18');
   // 라운딩 타입 필터 (전체 / 필드 / 스크린) - 통계 그래프와 기록 리스트에 공통 적용
@@ -884,6 +886,14 @@ function ScoresPage() {
   const handleLogout = async () => {
     await signOut(auth);
     navigate({ to: "/" });
+  };
+
+  const handleInviteFriends = async () => {
+    try {
+      await inviteFriendsViaKakao();
+    } catch (e: any) {
+      alert(e?.message || "카카오 친구 초대에 실패했습니다.");
+    }
   };
 
   const handleSaveScore = async (scoreData: any) => {
@@ -1002,7 +1012,44 @@ function ScoresPage() {
               </Button>
             )}
           </div>
-          <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut className="w-4 h-4" /></Button>
+          <div className="relative">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsSettingsMenuOpen(!isSettingsMenuOpen)}
+              aria-label="설정"
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
+            {isSettingsMenuOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={() => setIsSettingsMenuOpen(false)}
+                />
+                <div className="absolute right-0 mt-1 w-36 bg-white border rounded-md shadow-lg z-20">
+                  <button
+                    onClick={() => {
+                      setIsSettingsMenuOpen(false);
+                      handleInviteFriends();
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 hover:bg-teal-50 hover:text-teal-700 border-b cursor-pointer flex items-center gap-2"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" /> 친구 초대
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsSettingsMenuOpen(false);
+                      handleLogout();
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 hover:bg-red-50 hover:text-red-600 cursor-pointer flex items-center gap-2"
+                  >
+                    <LogOut className="w-3.5 h-3.5" /> 로그아웃
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </header>
 

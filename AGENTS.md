@@ -78,7 +78,11 @@ VITE_FIREBASE_MESSAGING_SENDER_ID
 VITE_FIREBASE_APP_ID
 VITE_FIREBASE_MEASUREMENT_ID
 VITE_GOLF_API_KEY          # RapidAPI 골프 코스 API 키 (없으면 API 조회 스킵/빈 템플릿 반환)
+VITE_KAKAO_REST_API_KEY    # 카카오 로그인(OAuth)용 REST API 키
+VITE_KAKAO_JAVASCRIPT_KEY  # 카카오 친구 초대(공유하기, Kakao.Share)용 JavaScript 키 — 로그인 키와 별개(같은 앱)
 ```
+
+> ℹ️ **카카오 공유(친구 초대)**: `src/lib/kakao.ts`의 `inviteFriendsViaKakao`가 JS SDK를 동적 로드해 `Kakao.Share.sendDefault`(피드형)로 카카오톡 공유창을 띄운다. 동작 조건: 카카오 개발자 콘솔 > 앱 설정 > **플랫폼 > Web 에 서비스 도메인이 등록**되어 있어야 함(미등록 시 공유 실패). 스코어 페이지 헤더 톱니바퀴 메뉴에서 호출.
 
 > ⚠️ **민감 정보 주의**: 저장소 루트에 `firebase-admin-key.json`(서비스 계정 키)이 있다. 절대 노출/커밋 확산 금지. 카카오/네이버 OAuth 서버 액션이 이를 사용한다.
 
@@ -105,6 +109,7 @@ src/
 │  ├─ firebase.ts         # Firebase 클라이언트 초기화
 │  ├─ firebase-admin.ts   # Firebase Admin (서버)
 │  ├─ golfApi.ts          # 골프장/홀 정보 조회 (DB 우선 → RapidAPI fallback)
+│  ├─ kakao.ts            # 카카오 JS SDK 동적 로더 + inviteFriendsViaKakao(친구 초대/공유)
 │  ├─ auth/providers.ts   # 클라이언트 로그인 (google/apple/custom token/anonymous)
 │  ├─ auth/server-actions.ts  # 카카오/네이버 커스텀 토큰 발급(서버)
 │  └─ version.ts          # APP_VERSION + RELEASE_NOTES

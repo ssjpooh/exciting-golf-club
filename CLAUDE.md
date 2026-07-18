@@ -16,6 +16,12 @@
 
 ## 🗓️ 작업 로그 (최신이 위)
 
+### 2026-07-18 — 카카오 친구 초대(공유) 기능 + 설정(톱니바퀴) 메뉴
+- **무엇**: 스코어 페이지(`/scores`) 헤더의 **로그아웃 버튼 → 톱니바퀴(설정) 드롭다운**으로 변경. 메뉴 안에 **친구 초대** + **로그아웃** 2개. 친구 초대는 카카오 JS SDK `Kakao.Share.sendDefault`(피드형)로 카카오톡 공유창을 띄워 앱 링크를 보냄(링크 공유형, 별도 심사 불필요).
+- **왜**: 사용자 요청. 헤더 우측 정리 + 카카오로 지인 초대.
+- **파일**: `src/lib/kakao.ts`(신규 — SDK 동적 로더 + `inviteFriendsViaKakao`), `src/routes/scores.tsx`(헤더 드롭다운, `isSettingsMenuOpen` 상태, `handleInviteFriends`, 아이콘 `Settings`/`UserPlus` 임포트), `.env`(`VITE_KAKAO_JAVASCRIPT_KEY` 추가), `AGENTS.md`.
+- **주의**: 공유하기는 **JavaScript 키**(`VITE_KAKAO_JAVASCRIPT_KEY`)를 쓴다(로그인용 REST API 키와 별개, 같은 앱). 동작하려면 카카오 개발자 콘솔 > 앱 설정 > **플랫폼 > Web 에 서비스 도메인 등록** 필요. 미등록 시 공유창이 안 뜬다.
+
 ### 2026-07-14 — 세션 인수인계 체계 구축
 - **무엇**: `CLAUDE.md`(이 파일) 신규 생성. `AGENTS.md`에 §0 "작업 기록 규칙" 추가.
 - **왜**: 어떤 AI로 접속해도 이전 작업 맥락을 이어받도록. 작업 후 항상 로그를 남기는 규칙 확립.
