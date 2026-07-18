@@ -338,7 +338,7 @@ export async function createOrUpdateUser(user: {
 
     const initialNickname = user.displayName || user.email?.split("@")[0] || "회원";
 
-    await setDoc(userRef, {
+    const newUserDoc = {
       uid: user.uid,
       email: user.email || "",
       nickname: initialNickname,
@@ -348,7 +348,20 @@ export async function createOrUpdateUser(user: {
       highScore: 0,
       createdAt: serverTimestamp(),
       lastLoginAt: serverTimestamp(),
-    });
+    };
+
+    try {
+      await setDoc(userRef, newUserDoc);
+    } catch (e) {
+      // 보안 규칙상 super_admin 자동 승급은 토큰에 이메일이 있는 로그인(구글/애플)만 가능.
+      // 카카오/네이버(커스텀 토큰)는 거부될 수 있으므로 member로 생성하고, 승급은 관리자가 수동으로.
+      if (role === "super_admin") {
+        console.warn("super_admin 생성이 거부되어 member로 생성합니다:", e);
+        await setDoc(userRef, { ...newUserDoc, role: "member" });
+      } else {
+        throw e;
+      }
+    }
   } else {
     // 기존 유저 로그인 시간 갱신 및 관리자 등급 강제 업데이트
     const existingData = userSnap.data() as UserProfile;
@@ -375,7 +388,17 @@ export async function createOrUpdateUser(user: {
     try {
       await updateDoc(userRef, updateData);
     } catch (e) {
-      console.warn("Failed to update user login time/role on login (ignoring):", e);
+      // 보안 규칙상 role 자동 승급이 거부된 경우(카카오/네이버 커스텀 토큰), role 제외하고 재시도
+      if (updateData.role) {
+        try {
+          const { role: _role, ...rest } = updateData;
+          await updateDoc(userRef, rest);
+        } catch (e2) {
+          console.warn("Failed to update user login time on login (ignoring):", e2);
+        }
+      } else {
+        console.warn("Failed to update user login time/role on login (ignoring):", e);
+      }
     }
   }
 }

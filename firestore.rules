@@ -1,0 +1,86 @@
+rules_version = '2';
+
+// 익사이팅 골프 클럽 — Firestore 보안 규칙
+// 배포: Firebase 콘솔 > Firestore Database > 규칙 탭에 붙여넣고 "게시"
+// (이 파일은 버전 관리용 사본. 콘솔 규칙과 항상 동일하게 유지할 것)
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // 요청자가 관리자(super_admin/master)인지 — users 문서의 role로 판정
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'master'];
+    }
+
+    // 슈퍼 관리자 이메일 목록 (db.ts createOrUpdateUser의 adminEmails와 동일하게 유지)
+    // 주의: 토큰에 이메일이 실리는 구글/애플 로그인만 여기서 자동 승급 가능.
+    // 카카오/네이버(커스텀 토큰, 이메일 클레임 없음)는 member로 생성 후 관리자가 승급.
+    function isAdminEmail() {
+      return request.auth.token.email in [
+        'tlsejdzkzk@gmail.com',
+        'tkdwnslpooh@gmail.com',
+        'ssjpooh@kakao.com',
+        'tlsejdzkzk1@naver.com',
+        'shin.sangjun@icloud.com'
+      ];
+    }
+
+    // ── 유저 프로필 ─────────────────────────────────────────────
+    match /users/{uid} {
+      // 본인 또는 관리자만 읽기 (관리자 페이지의 전체 목록 조회 포함)
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+
+      // 생성: 본인 문서만. role은 member만 허용 (관리자 이메일이 토큰으로 검증되면 super_admin 허용)
+      allow create: if signedIn() && request.auth.uid == uid
+        && (request.resource.data.role == 'member'
+            || (request.resource.data.role == 'super_admin' && isAdminEmail()));
+
+      // 수정:
+      //  - 본인: role을 바꾸지 않는 수정만 (닉네임/핸디캡/average/highScore/lastLoginAt 등)
+      //  - 본인 + 검증된 관리자 이메일: 자기 role을 super_admin으로 승급 가능 (로그인 자동 승급)
+      //  - 관리자: 타 유저 문서 수정 가능 (등급/닉네임 변경, 스코어 수정에 따른 통계 갱신)
+      allow update: if signedIn()
+        && ((request.auth.uid == uid && request.resource.data.role == resource.data.role)
+            || (request.auth.uid == uid && request.resource.data.role == 'super_admin' && isAdminEmail())
+            || isAdmin());
+
+      // 삭제: 관리자만
+      allow delete: if isAdmin();
+    }
+
+    // ── 라운드 기록 ─────────────────────────────────────────────
+    match /scores/{scoreId} {
+      // 본인 기록 또는 관리자(타 유저 스코어 열람)만 읽기
+      allow read: if signedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+
+      // 생성: userId가 반드시 본인
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+
+      // 수정: 본인 기록만 (관리자 포함). userId는 바꿀 수 없음
+      allow update: if signedIn()
+        && (resource.data.userId == request.auth.uid || isAdmin())
+        && request.resource.data.userId == resource.data.userId;
+
+      // 삭제: 본인 기록 또는 관리자
+      allow delete: if signedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // ── 골프장 정보 (유저 간 공유 DB) ───────────────────────────
+    match /golf_courses/{courseId} {
+      // 로그인 유저 누구나 조회/등록/갱신 (스코어 입력 중 신규 골프장 공유 등록)
+      allow read, create, update: if signedIn();
+      // 삭제는 관리자만
+      allow delete: if isAdmin();
+    }
+
+    // 그 외 컬렉션은 전부 차단
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

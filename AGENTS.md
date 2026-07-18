@@ -120,6 +120,7 @@ src/
 
 ## 6. 인증 (Auth)
 
+- **Firestore 보안 규칙**: 저장소 루트 `firestore.rules`가 원본 사본. **실제 적용은 Firebase 콘솔 > Firestore > 규칙에 붙여넣어 "게시"** 해야 하며, 콘솔과 파일을 항상 동일하게 유지할 것. 요지: users는 본인+관리자만, scores는 본인 기록만(관리자는 열람), golf_courses는 로그인 유저 공유, 그 외 컬렉션 차단. role 자동 승급(super_admin)은 **토큰에 이메일이 실리는 구글/애플 로그인만** 가능 — 카카오/네이버는 커스텀 토큰이라 거부되며, `createOrUpdateUser`가 member로 폴백 후 관리자가 수동 승급.
 - Firebase Auth 사용. `onAuthStateChanged`로 로그인 상태 감지.
 - 지원 로그인: **Google, Apple**(팝업), **Kakao, Naver**(OAuth 콜백 → 서버에서 Firebase 커스텀 토큰 발급 → `signInWithCustomToken`), **익명**.
 - 로그인/최초 가입 시 `createOrUpdateUser`(`db.ts`)가 `users` 컬렉션에 프로필 생성/갱신.
