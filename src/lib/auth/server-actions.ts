@@ -29,7 +29,9 @@ function getEnvVar(name: string): string | undefined {
     if (typeof process !== "undefined" && process.env) {
       val = process.env[name] || process.env["VITE_" + name];
     }
-  } catch (e) {}
+  } catch {
+    // process 접근 불가 환경(Workers 등)에서는 무시
+  }
 
   if (val) return val;
 
@@ -40,7 +42,9 @@ function getEnvVar(name: string): string | undefined {
 
   try {
     val = (import.meta as any).env?.[name] || (import.meta as any).env?.["VITE_" + name];
-  } catch (e) {}
+  } catch {
+    // import.meta.env 접근 불가 환경에서는 무시
+  }
 
   return val;
 }

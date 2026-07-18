@@ -16,6 +16,12 @@
 
 ## 🗓️ 작업 로그 (최신이 위)
 
+### 2026-07-18 — 점검에서 나온 문제 일괄 정리 (tsc·lint 에러 0개 달성)
+- **무엇**: ① `firebase.ts` 프로덕션 콘솔에 Firebase 설정 출력하던 `console.log` 삭제. ② `index.tsx` 깨진 `getUserActiveApprovalRequest` import·죽은 익명 로그인 코드 제거. ③ `scores.tsx` 미사용 import(Recharts 등 16개)·미사용 상태/변수 제거. ④ lint 에러 4개 수정(MapSearchDialog `!` 단언 → null 가드, server-actions 빈 catch 정리, prefer-const). ⑤ 기존 tsc 에러 4개 전부 수정(`par` 타입, `game.handicap` undefined 2건 포함). ⑥ **슈퍼 관리자 이메일을 `tlsejdzkzk@gmail.com` 단독으로 3곳(db.ts/scores.tsx/firestore.rules) 통일**.
+- **왜**: 앱 전체 점검(2026-07-18)에서 나온 문제사항 처리. 관리자 단독 지정은 사용자 결정.
+- **파일**: `src/lib/firebase.ts`, `src/routes/index.tsx`, `src/routes/scores.tsx`, `src/routes/admin/users.tsx`, `src/components/MapSearchDialog.tsx`, `src/lib/auth/server-actions.ts`, `src/lib/db.ts`, `firestore.rules`, `AGENTS.md`(§6·§11 갱신).
+- **주의**: 이제부터 `npx tsc --noEmit` 기준 **에러 0개가 정상**. `firestore.rules` 변경분(관리자 이메일 축소)은 **콘솔에 다시 게시 필요**. 다른 이메일 계정이 DB에 이미 super_admin으로 남아있다면 자동 강등되지는 않음(콘솔에서 수동 변경).
+
 ### 2026-07-18 — 구글 로그인 삭제
 - **무엇**: 로그인 페이지에서 구글 로그인 버튼 및 관련 분기(카카오톡 인앱 브라우저 외부 열기 우회 `isKakao` 포함) 제거. 이제 노출되는 로그인은 **카카오톡뿐** (네이버/애플은 기존부터 주석, 익명은 미노출 죽은 코드).
 - **왜**: 사용자 요청.

@@ -21,33 +21,14 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogOut, Plus, MapPin, Check, Menu, Settings, UserPlus } from "lucide-react";
+import { LogOut, Plus, MapPin, Menu, Settings, UserPlus } from "lucide-react";
 import { inviteFriendsViaKakao } from "@/lib/kakao";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip as ChartTooltip,
-  Legend,
-  CartesianGrid,
-} from "recharts";
-import {
-  BarChart, 
-  Bar, 
-  XAxis as BarXAxis, 
-  YAxis as BarYAxis, 
-  Tooltip as BarTooltip, 
-  ResponsiveContainer as BarResponsiveContainer 
-} from "recharts";
 import { ScoreStatisticsGraph } from "@/components/ScoreStatisticsGraph";
 
 type ScoresSearch = {
@@ -171,7 +152,6 @@ function RecordRoundDialog({
     }, 0);
   }, [holes]);
 
-  const totalPar = useMemo(() => holes.reduce((acc, h) => acc + (Number(h.par) || 0), 0), [holes]);
   const showHcpColumn = handicapType === 'hole' || handicapType === 'both';
 
   const handleHoleCountChange = (count: number) => {
@@ -265,7 +245,7 @@ function RecordRoundDialog({
           totalPar: holes.reduce((acc, h) => acc + (Number(h.par) || 0), 0),
           holes: holes.map(h => ({
             hole: h.hole,
-            par: h.par,
+            par: Number(h.par) || 0,
             handicap: h.handicap || 0
           }))
         };
@@ -664,7 +644,6 @@ function RecordRoundDialog({
                         {holes.map((h, i) => {
                           const hcpStrokes = h.handicap || 0;
                           const parVal = Number(h.par) || 0;
-                          const scoreVal = h.score === "" ? "" : Number(h.score);
                           const computedGross = h.score !== "" && parVal > 0 ? (parVal + Number(h.score)) : "";
                           const showNetDisplay = showHcpColumn && hcpStrokes > 0 && (computedGross !== "" && Number(computedGross) > 0);
 
@@ -822,7 +801,6 @@ function ScoresPage() {
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
   const [isSettingsMenuOpen, setIsSettingsMenuOpen] = useState(false);
   const [fontSizePreset, setFontSizePreset] = useState<'normal' | 'medium' | 'large' | 'huge'>('normal');
-  const [activeHoleTab, setActiveHoleTab] = useState<'9' | '18'>('18');
   // 라운딩 타입 필터 (전체 / 필드 / 스크린) - 통계 그래프와 기록 리스트에 공통 적용
   const [roundTypeFilter, setRoundTypeFilter] = useState<'all' | RoundTypeCode>('all');
 
@@ -941,8 +919,8 @@ function ScoresPage() {
   // Check if current user is super admin email-wise
   const isSuperAdminEmail = useMemo(() => {
     if (!user || !user.email) return false;
-    const email = user.email.toLowerCase();
-    return email === "tlsejdzkzk@gmail.com" || email === "tkdwnslpooh@gmail.com";
+    // 슈퍼 관리자 이메일 — db.ts adminEmails / firestore.rules isAdminEmail과 동일하게 유지할 것
+    return user.email.toLowerCase() === "tlsejdzkzk@gmail.com";
   }, [user]);
 
   if (isLoading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
@@ -1349,7 +1327,7 @@ function ScoresPage() {
                     </span>
                     {((game.handicap !== undefined && game.handicap > 0) || (game.handicapType === "hole" && game.holes?.some(h => (h.handicap || 0) > 0))) && game.handicapType !== "none" && (
                       <span className={cardNetBadge}>
-                        네트(적용): {game.netScore ?? (game.total - game.handicap)}타 ({
+                        네트(적용): {game.netScore ?? (game.total - (game.handicap ?? 0))}타 ({
                           game.handicapType === "total" ? `총합 차감 / HCP ${game.handicap}` :
                           game.handicapType === "hole" ? `홀별 차감 / HCP ${game.holes?.reduce((acc, h) => acc + (h.handicap || 0), 0) || 0}` :
                           `둘 다 적용 / HCP ${game.handicap}(총합)+${game.holes?.reduce((acc, h) => acc + (h.handicap || 0), 0) || 0}(홀별)`

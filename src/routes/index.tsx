@@ -3,15 +3,11 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { signInWithApple, signInAnonymouslyUser } from "@/lib/auth/providers";
+import { signInWithApple } from "@/lib/auth/providers";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { Plus, LogOut } from "lucide-react";
-import { 
-  createOrUpdateUser, 
-  getUserProfile, 
-  getUserActiveApprovalRequest 
-} from "@/lib/db";
+import { createOrUpdateUser, getUserProfile } from "@/lib/db";
 
 export const Route = createFileRoute("/")({
   component: LoginPage,
@@ -82,28 +78,6 @@ function LoginPage() {
     });
     return () => unsubscribe();
   }, [navigate]);
-
-  const handleSubmit = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (isLoading) return;
-    setIsLoading(true);
-    try {
-      const user = await signInAnonymouslyUser();
-      // 익명 로그인 시에도 Firestore 프로필을 미리 생성하여 scores 페이지에서의 레이스 컨디션을 방지합니다.
-      await createOrUpdateUser({
-        uid: user.uid,
-        email: null,
-        displayName: "익명 회원",
-        providerData: [],
-      });
-      // createOrUpdateUser 완료 후 onAuthStateChanged가 흐름을 처리하도록 함
-    } catch (error) {
-      console.error("Login failed", error);
-      alert("로그인에 실패했습니다.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleSocialLogin = async (provider: Provider) => {
     if (isLoading) return;

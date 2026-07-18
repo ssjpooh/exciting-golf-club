@@ -319,14 +319,8 @@ export async function createOrUpdateUser(user: {
     provider = user.providerData[0].providerId.replace(".com", "");
   }
 
-  // 슈퍼 관리자로 지정할 이메일들
-  const adminEmails = [
-    "tlsejdzkzk@gmail.com",
-    "tkdwnslpooh@gmail.com",
-    "ssjpooh@kakao.com",
-    "tlsejdzkzk1@naver.com",
-    "shin.sangjun@icloud.com",
-  ];
+  // 슈퍼 관리자로 지정할 이메일 (scores.tsx isSuperAdminEmail / firestore.rules isAdminEmail과 동일하게 유지할 것)
+  const adminEmails = ["tlsejdzkzk@gmail.com"];
   const isTargetAdmin = user.email && adminEmails.includes(user.email);
 
   if (!userSnap.exists()) {

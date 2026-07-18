@@ -21,13 +21,7 @@ service cloud.firestore {
     // 주의: 토큰에 이메일이 실리는 구글/애플 로그인만 여기서 자동 승급 가능.
     // 카카오/네이버(커스텀 토큰, 이메일 클레임 없음)는 member로 생성 후 관리자가 승급.
     function isAdminEmail() {
-      return request.auth.token.email in [
-        'tlsejdzkzk@gmail.com',
-        'tkdwnslpooh@gmail.com',
-        'ssjpooh@kakao.com',
-        'tlsejdzkzk1@naver.com',
-        'shin.sangjun@icloud.com'
-      ];
+      return request.auth.token.email in ['tlsejdzkzk@gmail.com'];
     }
 
     // ── 유저 프로필 ─────────────────────────────────────────────

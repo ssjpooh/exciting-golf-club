@@ -193,7 +193,7 @@ function AdminUsersPage() {
   };
 
   const filteredUsers = useMemo(() => {
-    let list = users || [];
+    const list = users || [];
     return list.filter(
       (u) =>
         u.nickname.toLowerCase().includes(search.toLowerCase()) ||
@@ -412,7 +412,7 @@ function AdminUsersPage() {
                         </span>
                         {((game.handicap !== undefined && game.handicap > 0) || (game.handicapType === "hole" && game.holes?.some(h => (h.handicap || 0) > 0))) && game.handicapType !== "none" && (
                           <span className="text-sm font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
-                            네트(적용): {game.netScore ?? (game.total - game.handicap)}타 ({
+                            네트(적용): {game.netScore ?? (game.total - (game.handicap ?? 0))}타 ({
                               game.handicapType === "total" ? `총합 차감 / HCP ${game.handicap}` :
                               game.handicapType === "hole" ? `홀별 차감 / HCP ${game.holes?.reduce((acc, h) => acc + (h.handicap || 0), 0) || 0}` :
                               `둘 다 적용 / HCP ${game.handicap}(총합)+${game.holes?.reduce((acc, h) => acc + (h.handicap || 0), 0) || 0}(홀별)`

@@ -225,16 +225,20 @@ export function MapSearchDialog({ open, onOpenChange, onSelectGolfCourse }: MapS
                 />
                 
                 {/* Golf Courses Markers */}
-                {golfCourses.map((place, idx) => (
-                  <Marker
-                    key={idx}
-                    position={place.geometry?.location!}
-                    onClick={() => setSelectedPlace(place)}
-                    icon={{
-                      url: "https://maps.google.com/mapfiles/ms/icons/green-dot.png"
-                    }}
-                  />
-                ))}
+                {golfCourses.map((place, idx) => {
+                  const position = place.geometry?.location;
+                  if (!position) return null;
+                  return (
+                    <Marker
+                      key={idx}
+                      position={position}
+                      onClick={() => setSelectedPlace(place)}
+                      icon={{
+                        url: "https://maps.google.com/mapfiles/ms/icons/green-dot.png"
+                      }}
+                    />
+                  );
+                })}
 
                 {/* Info Window for Selected Place */}
                 {selectedPlace && selectedPlace.geometry && selectedPlace.geometry.location && (

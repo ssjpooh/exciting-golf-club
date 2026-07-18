@@ -124,9 +124,7 @@ src/
 - Firebase Auth 사용. `onAuthStateChanged`로 로그인 상태 감지.
 - 지원 로그인: **Google, Apple**(팝업), **Kakao, Naver**(OAuth 콜백 → 서버에서 Firebase 커스텀 토큰 발급 → `signInWithCustomToken`), **익명**.
 - 로그인/최초 가입 시 `createOrUpdateUser`(`db.ts`)가 `users` 컬렉션에 프로필 생성/갱신.
-- **슈퍼 관리자 이메일은 하드코딩**되어 있다:
-  - `db.ts` `createOrUpdateUser`의 `adminEmails`: `tlsejdzkzk@gmail.com`, `tkdwnslpooh@gmail.com`, `ssjpooh@kakao.com`, `tlsejdzkzk1@naver.com`, `shin.sangjun@icloud.com` → 자동 `super_admin`.
-  - `scores.tsx`의 `isSuperAdminEmail`: `tlsejdzkzk@gmail.com`, `tkdwnslpooh@gmail.com` (관리자 메뉴 노출용, **위 목록과 별개라 불일치 주의**).
+- **슈퍼 관리자 이메일은 `tlsejdzkzk@gmail.com` 단독**으로 3곳에 하드코딩 — `db.ts` `adminEmails`, `scores.tsx` `isSuperAdminEmail`, `firestore.rules` `isAdminEmail`. **셋을 항상 동일하게 유지할 것** (2026-07-18 통일 완료).
 
 ---
 
@@ -223,19 +221,15 @@ src/
 
 ---
 
-## 11. 알려진 이슈 / 주의점 (기존부터 존재, 이번 기능과 무관)
+## 11. 알려진 이슈 / 주의점
 
-`npx tsc --noEmit` 시 아래 **기존 에러**가 뜬다. 신규 변경으로 인한 에러와 구분할 것:
+**2026-07-18 기준 `npx tsc --noEmit` 에러 0개, `npm run lint` 에러 0개**(경고 25개는 미사용 변수 등 무해). 과거 있던 기존 에러 4건(깨진 `getUserActiveApprovalRequest` import, `par: number|""` 타입 불일치, `game.handicap` undefined 2건)과 관리자 이메일 불일치는 모두 해결됨.
 
-1. **`src/routes/index.tsx`** — 존재하지 않는 `getUserActiveApprovalRequest`를 `@/lib/db`에서 import.
-   `error TS2305: Module '"@/lib/db"' has no exported member 'getUserActiveApprovalRequest'`.
-   → `db.ts`에 해당 함수가 없다. 승인 요청 기능이 미완성이거나 제거된 흔적. 로그인 흐름 수정 시 확인 필요.
-2. **`src/routes/scores.tsx:271`** — `saveGolfCourseToDb`에 넘기는 `holes[].par` 타입이 `number | ""`인데 `GolfCourse.holes[].par`는 `number`. 입력 중 빈 값 허용 때문.
-3. **`src/routes/scores.tsx`** — 게임 카드 렌더에서 `game.handicap`이 `possibly undefined` (`TS18048`).
-4. **`admin/users.tsx`** — `game.handicap` undefined 관련 동일 계열 경고.
-5. **슈퍼 관리자 이메일 목록 불일치**: `db.ts`와 `scores.tsx`의 하드코딩 목록이 다름(§6 참고).
+남은 주의점:
+1. **네이버 OAuth `state` 미검증** — CSRF 방어 없음. 현재 네이버 로그인 버튼이 주석 처리라 실질 위험 낮지만, 재활성화 시 콜백에서 state 검증을 추가할 것.
+2. **Firestore 규칙은 콘솔 수동 게시** — `firestore.rules` 수정 시 콘솔에도 반영 필수(§6).
 
-> 새 변경을 커밋하기 전 `npx tsc --noEmit`으로 **위 목록 외 새로운 에러가 없는지**만 확인하면 된다.
+> 새 변경을 커밋하기 전 `npx tsc --noEmit`이 **에러 0개**인지 확인할 것.
 
 ---
 
