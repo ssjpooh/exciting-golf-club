@@ -2,7 +2,7 @@
 // 로그인은 REST API 키를 쓰지만, 공유하기(Kakao.Share)는 JavaScript 키를 사용한다.
 // 카카오 개발자 콘솔 > 앱 설정 > 플랫폼 > Web 에 서비스 도메인이 등록되어 있어야 동작한다.
 
-const KAKAO_SDK_URL = "https://t1.kakao.com/kakao_js_sdk/2.7.4/kakao.min.js";
+const KAKAO_SDK_URL = "https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js";
 
 declare global {
   interface Window {
