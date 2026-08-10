@@ -16,6 +16,12 @@
 
 ## 🗓️ 작업 로그 (최신이 위)
 
+### 2026-08-10 — 라운드 기록 중 입력값 유실 수정 (전반→휴식→후반 시 초기화되던 현상)
+- **무엇**: ① `src/lib/roundDraft.ts` 신규 — 작성 중인 스코어카드를 `localStorage`(`golf-round-draft:<uid>`)에 **입력할 때마다 자동 임시저장**. ② `/scores` 상단에 **"작성 중인 라운드가 있어요" 배너**(골프장·입력 홀 수·저장 시각 + [이어서 기록하기]/[삭제]) 추가 — 골프장 검색을 다시 하지 않고 URL(`?courseId=`)까지 복구해 바로 이어서 입력. ③ 서버 저장이 **성공한 뒤에만** 임시저장 삭제(실패 시 입력 보존, `handleSaveScore`가 에러를 throw하도록 변경). ④ 스코어 다이얼로그가 **오버레이 탭/ESC로 닫히지 않도록** 차단. ⑤ `isHydratedRef` 도입 — 골프장 정보(`courseInfo`)가 새로 로드돼도 입력 중인 폼을 다시 초기화하지 않음(기존 잠재 버그). ⑥ `public/sw.js`를 무의미한 pass-through에서 **네트워크 우선 + 오프라인 시 캐시 폴백**으로 교체(전파 약한 골프장에서 새로고침되면 앱이 아예 안 뜨던 문제).
+- **왜**: 전반 라운드 후 휴식(폰 화면 끄기/앱 전환) 뒤 돌아오면 골프장 검색부터 다시 나오고 입력한 스코어가 전부 사라진다는 제보. 원인은 스코어가 다이얼로그 React state에만 있었고, 모바일 브라우저가 탭을 메모리에서 정리(PWA는 `start_url("/")`부터 재시작)하면 복구 수단이 전혀 없었기 때문.
+- **파일**: `src/lib/roundDraft.ts`(신규), `src/routes/scores.tsx`, `public/sw.js`, `AGENTS.md`(§5 구조·§8-5-1 신설).
+- **주의**: 임시저장은 **사용자당 1건**. 다른 골프장에서 새로 기록을 시작하면 확인 후 기존 임시저장을 덮어쓴다. 드래프트의 `holes[].score`는 **오버타(상대 타수)** 기준이라 DB 저장값(실제 타수)과 다르다. 서비스워커 캐시 이름이 `v3`으로 올라가 예전 캐시는 자동 정리된다.
+
 ### 2026-07-18 — 점검에서 나온 문제 일괄 정리 (tsc·lint 에러 0개 달성)
 - **무엇**: ① `firebase.ts` 프로덕션 콘솔에 Firebase 설정 출력하던 `console.log` 삭제. ② `index.tsx` 깨진 `getUserActiveApprovalRequest` import·죽은 익명 로그인 코드 제거. ③ `scores.tsx` 미사용 import(Recharts 등 16개)·미사용 상태/변수 제거. ④ lint 에러 4개 수정(MapSearchDialog `!` 단언 → null 가드, server-actions 빈 catch 정리, prefer-const). ⑤ 기존 tsc 에러 4개 전부 수정(`par` 타입, `game.handicap` undefined 2건 포함). ⑥ **슈퍼 관리자 이메일을 `tlsejdzkzk@gmail.com` 단독으로 3곳(db.ts/scores.tsx/firestore.rules) 통일**.
 - **왜**: 앱 전체 점검(2026-07-18)에서 나온 문제사항 처리. 관리자 단독 지정은 사용자 결정.

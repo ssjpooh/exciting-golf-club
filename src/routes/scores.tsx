@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import {
@@ -23,6 +23,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LogOut, Plus, MapPin, Menu, Settings, UserPlus } from "lucide-react";
 import { inviteFriendsViaKakao } from "@/lib/kakao";
+import {
+  RoundDraft,
+  loadRoundDraft,
+  saveRoundDraft,
+  clearRoundDraft,
+  countFilledHoles,
+  draftHasInput,
+  formatDraftTime,
+} from "@/lib/roundDraft";
 import {
   Dialog,
   DialogContent,
@@ -57,15 +66,24 @@ function RecordRoundDialog({
   defaultHandicap = 0,
   initialData,
   fontSizePreset,
+  userId,
+  onDraftChange,
+  forceDraftResume = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   courseInfo?: any;
-  onSave: (score: any) => void;
+  onSave: (score: any) => void | Promise<void>;
   onDelete?: (scoreId: string) => void;
   defaultHandicap?: number;
   initialData?: Score | null;
   fontSizePreset: 'normal' | 'medium' | 'large' | 'huge';
+  /** 임시저장(드래프트)을 사용자별로 보관하기 위한 uid */
+  userId?: string | null;
+  /** 드래프트가 저장/삭제될 때 부모(배너)에 알림 */
+  onDraftChange?: () => void;
+  /** "이어서 기록하기"로 연 경우 — 골프장 정보 로딩 상태와 무관하게 임시저장을 복구한다 */
+  forceDraftResume?: boolean;
 }) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [location, setLocation] = useState(courseInfo?.name || "");
@@ -78,11 +96,30 @@ function RecordRoundDialog({
   const [isNewCourse, setIsNewCourse] = useState(false);
   const [tempHoleCount, setTempHoleCount] = useState<number>(18);
   const [setupStep, setSetupStep] = useState<'choose_holes' | 'scorecard'>('scorecard');
+  /**
+   * 실제로 저장할 골프장 ID.
+   * 드래프트에서 복구하면 courseInfo가 아직/영영 없을 수 있어서, 그때도 원래
+   * 골프장에 기록이 붙도록 별도로 들고 있는다.
+   */
+  const [activeCourseId, setActiveCourseId] = useState<string>("");
+  /**
+   * 이번에 다이얼로그를 연 뒤 초기값 세팅(또는 임시저장 복구)이 끝났는지.
+   * - false 동안에는 자동 임시저장을 하지 않는다(빈 값으로 덮어쓰기 방지).
+   * - true가 된 뒤에는 courseInfo 객체가 새로 로드돼도 폼을 다시 초기화하지 않는다.
+   *   (예전에는 골프장 정보가 갱신되면 입력 중이던 스코어가 통째로 초기화됐다)
+   */
+  const isHydratedRef = useRef(false);
 
   useEffect(() => {
-    if (open) {
+    if (!open) {
+      isHydratedRef.current = false;
+      return;
+    }
+
+    if (!isHydratedRef.current) {
       if (initialData) {
         setIsNewCourse(false);
+        setActiveCourseId(initialData.courseId || "");
         setHandicapInput(initialData.handicap ?? defaultHandicap);
         setHandicapType(initialData.handicapType ?? "none");
         
@@ -109,11 +146,52 @@ function RecordRoundDialog({
           return { ...h, score: relativeScore, strategy: h.strategy || "" };
         }) || []);
         setSetupStep('scorecard');
+        isHydratedRef.current = true;
         return;
+      }
+
+      // ── 신규 기록: 작성 중이던 임시저장(드래프트)이 있으면 그대로 이어서 ──
+      // 휴식 후 브라우저가 페이지를 날려버려도 전반 스코어가 남아있게 하는 핵심 로직.
+      const draft = loadRoundDraft(userId);
+      if (draft) {
+        // 배너에서 "이어서 기록하기"로 들어온 경우, 화면에 남아있던 다른 골프장 정보 때문에
+        // 복구가 막히지 않도록 무조건 드래프트를 우선한다.
+        const sameCourse =
+          forceDraftResume || !courseInfo || !courseInfo.id || draft.courseId === courseInfo.id;
+        if (sameCourse) {
+          setIsNewCourse(draft.isNewCourse);
+          setActiveCourseId(draft.courseId);
+          setHandicapInput(draft.handicapInput);
+          setHandicapType(draft.handicapType);
+          setLocation(draft.courseName);
+          setCourseSection(draft.courseSection);
+          setRoundType(draft.roundType);
+          setDate(draft.date);
+          setMemo(draft.memo);
+          setHoles(draft.holes);
+          setTempHoleCount(draft.tempHoleCount);
+          setSetupStep(draft.setupStep);
+          isHydratedRef.current = true;
+          return;
+        }
+        // 다른 골프장의 작성 중인 기록이 있는 경우: 덮어쓰기 전에 한 번 확인
+        if (draftHasInput(draft)) {
+          const ok = window.confirm(
+            `작성 중이던 "${draft.courseName}" 기록(${countFilledHoles(draft.holes)}홀 입력됨)이 있습니다.\n` +
+            `여기서 새로 기록을 시작하면 그 내용은 삭제됩니다. 계속할까요?`
+          );
+          if (!ok) {
+            onOpenChange(false);
+            return;
+          }
+        }
+        clearRoundDraft(userId);
+        onDraftChange?.();
       }
 
       const hasHoles = courseInfo?.holes && courseInfo.holes.length > 0;
       setIsNewCourse(!hasHoles);
+      setActiveCourseId(courseInfo?.id || "");
       setHandicapInput(defaultHandicap);
       setHandicapType("none");
       setCourseSection(""); // Reset course section for new entry
@@ -139,8 +217,40 @@ function RecordRoundDialog({
           handicap: 0
         })));
       }
+
+      // 골프장 정보가 아직 로딩 중(null)이면 확정하지 않고, 도착했을 때 한 번 더 세팅되게 둔다.
+      isHydratedRef.current = !!courseInfo;
     }
+    // userId/onDraftChange는 드래프트 복구용 보조값이라 재실행 트리거로 넣지 않는다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, courseInfo, defaultHandicap, initialData]);
+
+  /**
+   * 입력값이 바뀔 때마다 localStorage에 임시저장.
+   * (휴식 중 브라우저가 탭을 정리하거나 실수로 창을 닫아도 복구 가능)
+   * 기존 기록 수정(initialData)은 원본이 서버에 있으므로 대상에서 제외한다.
+   */
+  useEffect(() => {
+    if (!open || initialData || !userId || !isHydratedRef.current) return;
+    saveRoundDraft(userId, {
+      courseId: activeCourseId,
+      courseName: location,
+      courseSection,
+      roundType,
+      date,
+      memo,
+      holes,
+      handicapInput,
+      handicapType,
+      isNewCourse,
+      tempHoleCount,
+      setupStep,
+    });
+    // 배너 갱신은 다이얼로그를 닫을 때만 한다 (타이핑마다 부모를 리렌더하지 않도록)
+  }, [
+    open, initialData, userId, activeCourseId, location, courseSection, roundType,
+    date, memo, holes, handicapInput, handicapType, isNewCourse, tempHoleCount, setupStep,
+  ]);
 
   // Actual Gross Total Score: Sum of (Par + Relative Score)
   const totalScore = useMemo(() => {
@@ -211,7 +321,8 @@ function RecordRoundDialog({
 
   const save = async () => {
     try {
-      const finalCourseId = courseInfo?.id || encodeURIComponent(location);
+      // 드래프트에서 복구한 경우 courseInfo가 없을 수 있으므로 activeCourseId를 우선 사용
+      const finalCourseId = activeCourseId || courseInfo?.id || encodeURIComponent(location);
       const finalName = courseSection ? `${location} (${courseSection})` : location;
       const hcpInputVal = (handicapType === "total" || handicapType === "both") ? (handicapInput === "" ? 0 : Number(handicapInput)) : 0;
       
@@ -252,7 +363,7 @@ function RecordRoundDialog({
         await saveGolfCourseToDb(newCourseData);
       }
 
-      onSave({
+      await onSave({
         id: initialData?.id,
         date,
         location: finalName,
@@ -265,6 +376,12 @@ function RecordRoundDialog({
         handicapType,
         roundType,
       });
+
+      // 서버 저장까지 성공한 뒤에만 임시저장을 비운다 (실패 시 입력값 보존)
+      if (!initialData) {
+        clearRoundDraft(userId);
+        onDraftChange?.();
+      }
       onOpenChange(false);
     } catch (err) {
       console.error("Failed to save course or score", err);
@@ -293,9 +410,20 @@ function RecordRoundDialog({
     }
   }, [totalScore, handicapInput, handicapType, holes]);
 
+  const filledHoleCount = countFilledHoles(holes);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-2xl p-0 h-[90vh] overflow-hidden flex flex-col">
+      {/*
+        스코어 카드는 라운드 내내 켜두는 화면이라, 배경(오버레이)을 실수로 탭하거나
+        ESC를 눌러서 닫히면 입력이 통째로 날아간 것처럼 보인다. 명시적으로 막는다.
+        (그래도 닫히는 경우를 대비해 입력값은 계속 임시저장된다.)
+      */}
+      <DialogContent
+        className="w-full max-w-2xl p-0 h-[90vh] overflow-hidden flex flex-col"
+        onInteractOutside={e => e.preventDefault()}
+        onEscapeKeyDown={e => e.preventDefault()}
+      >
         <DialogHeader className="bg-teal-600 px-5 py-4 text-white shrink-0">
           <DialogTitle className="text-lg font-bold flex flex-wrap items-center justify-between gap-2 pr-8">
             <span>{initialData ? "라운드 수정하기" : "라운드 기록하기"}</span>
@@ -768,8 +896,15 @@ function RecordRoundDialog({
                   기록 삭제
                 </Button>
               ) : <div></div>}
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => onOpenChange(false)}>취소</Button>
+              <div className="flex items-center gap-2">
+                {!initialData && filledHoleCount > 0 && (
+                  <span className="hidden sm:inline text-[11px] font-bold text-slate-400">
+                    ⛳ {filledHoleCount}홀 자동 임시저장됨
+                  </span>
+                )}
+                <Button variant="outline" onClick={() => onOpenChange(false)}>
+                  {!initialData && filledHoleCount > 0 ? "나중에 이어서" : "취소"}
+                </Button>
                 <Button onClick={save} className="bg-teal-600 hover:bg-teal-700 text-white font-bold">저장하기</Button>
               </div>
             </div>
@@ -803,6 +938,13 @@ function ScoresPage() {
   const [fontSizePreset, setFontSizePreset] = useState<'normal' | 'medium' | 'large' | 'huge'>('normal');
   // 라운딩 타입 필터 (전체 / 필드 / 스크린) - 통계 그래프와 기록 리스트에 공통 적용
   const [roundTypeFilter, setRoundTypeFilter] = useState<'all' | RoundTypeCode>('all');
+  // 작성 중이던 라운드(임시저장). 휴식 후 앱이 새로 뜨더라도 이어서 기록할 수 있게 한다.
+  const [draft, setDraft] = useState<RoundDraft | null>(null);
+  const [isResumingDraft, setIsResumingDraft] = useState(false);
+
+  const refreshDraft = useCallback(() => {
+    setDraft(loadRoundDraft(auth.currentUser?.uid));
+  }, []);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (currentUser) => {
@@ -811,6 +953,7 @@ function ScoresPage() {
         return;
       }
       setUser(currentUser);
+      setDraft(loadRoundDraft(currentUser.uid));
       const p = await getUserProfile(currentUser.uid);
       setProfile(p);
       if (p) {
@@ -874,6 +1017,27 @@ function ScoresPage() {
     }
   };
 
+  // 임시저장된 라운드를 이어서 기록하기
+  const handleResumeDraft = () => {
+    if (!draft) return;
+    setEditingScore(null);
+    setIsResumingDraft(true);
+    // 골프장 컨텍스트(URL)도 함께 복구해서 "골프장 검색부터 다시" 하지 않도록 한다.
+    if (draft.courseId && draft.courseId !== courseId) {
+      navigate({
+        to: "/scores",
+        search: { courseId: draft.courseId, courseName: draft.courseName },
+      });
+    }
+    setIsRecordOpen(true);
+  };
+
+  const handleDiscardDraft = () => {
+    if (!window.confirm("작성 중인 임시 기록을 삭제할까요? 삭제하면 되돌릴 수 없습니다.")) return;
+    clearRoundDraft(user?.uid);
+    setDraft(null);
+  };
+
   const handleSaveScore = async (scoreData: any) => {
     if (!user) return;
     try {
@@ -886,7 +1050,8 @@ function ScoresPage() {
       setGames(userScores);
     } catch (err) {
       console.error(err);
-      alert("점수 저장에 실패했습니다.");
+      // 다이얼로그가 실패를 알고 임시저장을 유지해야 하므로 그대로 던진다 (알림은 다이얼로그에서)
+      throw err;
     }
   };
 
@@ -1032,6 +1197,46 @@ function ScoresPage() {
       </header>
 
       <main className="p-4 max-w-2xl mx-auto space-y-6">
+        {/*
+          작성 중이던 라운드 이어쓰기 배너.
+          전반 후 휴식 등으로 앱/브라우저가 다시 뜨면 화면 상태는 초기화되지만
+          입력값은 임시저장되어 있으므로 여기서 바로 이어서 기록할 수 있다.
+        */}
+        {draftHasInput(draft) && !isRecordOpen && (
+          <Card className="p-4 bg-amber-50 border-amber-300 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-black text-amber-900 flex items-center gap-1.5">
+                  ⛳ 작성 중인 라운드가 있어요
+                </h3>
+                <p className="text-xs text-amber-800 font-bold mt-1 truncate">
+                  {draft!.courseSection ? `${draft!.courseName} (${draft!.courseSection})` : draft!.courseName}
+                  {" · "}
+                  {countFilledHoles(draft!.holes)}/{draft!.holes.length}홀 입력
+                </p>
+                <p className="text-[11px] text-amber-700 mt-0.5">
+                  자동 임시저장 {formatDraftTime(draft!.updatedAt)} · 이어서 후반 기록을 입력하세요
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  onClick={handleResumeDraft}
+                  className="bg-amber-500 hover:bg-amber-600 text-white font-black"
+                >
+                  이어서 기록하기
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={handleDiscardDraft}
+                  className="text-amber-700 hover:text-red-600 hover:bg-red-50 font-bold text-xs"
+                >
+                  삭제
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {courseInfo && (
           <Card className="p-4 bg-teal-50 border-teal-200">
             <h2 className="text-lg font-bold flex items-center gap-2 mb-2">
@@ -1471,14 +1676,21 @@ function ScoresPage() {
         open={isRecordOpen} 
         onOpenChange={(open) => {
           setIsRecordOpen(open);
-          if (!open) setEditingScore(null);
-        }} 
-        courseInfo={courseInfo} 
+          if (!open) {
+            setEditingScore(null);
+            setIsResumingDraft(false);
+            refreshDraft(); // 닫을 때 임시저장 상태를 다시 읽어 배너에 반영
+          }
+        }}
+        courseInfo={courseInfo}
         initialData={editingScore}
-        onSave={handleSaveScore} 
+        onSave={handleSaveScore}
         onDelete={handleDeleteScore}
         defaultHandicap={profile?.handicap !== undefined ? profile.handicap : (games.length > 0 ? (games[0].handicap ?? 0) : 0)}
         fontSizePreset={fontSizePreset}
+        userId={user?.uid}
+        onDraftChange={refreshDraft}
+        forceDraftResume={isResumingDraft}
       />
 
       <Dialog open={isEditHandicapOpen} onOpenChange={setIsEditHandicapOpen}>

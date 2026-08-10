@@ -110,6 +110,7 @@ src/
 │  ├─ firebase-admin.ts   # Firebase Admin (서버)
 │  ├─ golfApi.ts          # 골프장/홀 정보 조회 (DB 우선 → RapidAPI fallback)
 │  ├─ kakao.ts            # 카카오 JS SDK 동적 로더 + inviteFriendsViaKakao(친구 초대/공유)
+│  ├─ roundDraft.ts       # ★라운드 작성 중 임시저장(localStorage) — 휴식/새로고침 후 이어쓰기
 │  ├─ auth/providers.ts   # 클라이언트 로그인 (google/apple/custom token/anonymous)
 │  ├─ auth/server-actions.ts  # 카카오/네이버 커스텀 토큰 발급(서버)
 │  └─ version.ts          # APP_VERSION + RELEASE_NOTES
@@ -195,6 +196,17 @@ src/
 - **라운딩 타입 필터(전체/필드/스크린)**: 세그먼트 버튼. "조회 옵션 바"(시작/종료일 필터 카드 아래, 입력 창 글자 크기 옆)에 위치. `roundTypeFilter` 상태(`'all' | RoundTypeCode`).
 - **홈으로(전체기록)**: `courseId`가 없으면 `courseInfo`를 `null`로 비워 첫 로그인과 동일한 "내 라운드 기록" 화면으로 복귀.
 - 각 기록 카드의 "그로스(기본):" 배지 앞에 `[필드]`(초록)/`[스크린]`(남보라) 구분 라벨.
+
+### 8-5-1. 라운드 임시저장 / 이어쓰기 (`src/lib/roundDraft.ts`) — ★데이터 유실 방지★
+- **왜 있나**: 스코어 입력값은 원래 `RecordRoundDialog`의 React state에만 있었다. 전반 라운드 후 휴식(폰 화면 끄기/앱 전환)하면 모바일 브라우저가 탭을 메모리에서 정리해 페이지가 새로고침되고, PWA도 `start_url("/")`부터 다시 시작해서 **입력한 스코어가 전부 사라지고 골프장 검색부터 다시** 해야 했다.
+- **구조**: `localStorage["golf-round-draft:<uid>"]`에 `RoundDraft` 1건. 다이얼로그의 입력값이 바뀔 때마다 자동 저장(신규 기록만, 기존 기록 수정은 제외).
+- **주의**: 드래프트의 `holes[].score`는 다이얼로그 입력값 그대로 **오버타(상대 타수)**. DB의 `Score.holes[].score`(실제 타수)와 다르다.
+- **복구 경로 2가지**:
+  1. `/scores` 상단 **호박색 "작성 중인 라운드가 있어요" 배너** → `handleResumeDraft`가 `?courseId=...`로 URL까지 복구 후 다이얼로그를 연다(`forceDraftResume` prop으로 화면에 남은 다른 골프장 정보를 무시하고 드래프트 우선).
+  2. 같은 골프장에서 다이얼로그를 다시 열면 자동으로 이어짐.
+- **삭제 시점**: 서버 저장 **성공 후**에만(`await onSave` → `clearRoundDraft`). 저장 실패 시 입력값을 남긴다(그래서 `handleSaveScore`는 에러를 그대로 throw하고 알림은 다이얼로그가 띄운다). 배너의 "삭제" 버튼, 다른 골프장에서 새로 시작할 때(확인 후)도 삭제.
+- **`isHydratedRef`**: 다이얼로그를 연 뒤 초기화/복구가 끝났는지. `true`가 되면 `courseInfo` 객체가 새로 로드돼도 폼을 다시 초기화하지 않는다(예전엔 골프장 정보 갱신에 입력값이 통째로 날아갔다). 단 `courseInfo`가 아직 `null`이면 확정하지 않는다.
+- 스코어 다이얼로그는 오버레이 탭/ESC로 닫히지 않는다(`onInteractOutside`/`onEscapeKeyDown` preventDefault). 실수로 닫혀 입력이 날아가는 것처럼 보이는 문제 방지.
 
 ### 8-6. 글자 크기 프리셋 (`fontSizePreset`)
 - `'normal' | 'medium' | 'large' | 'huge'` — 노년층/접근성 대응. **거의 모든 UI 블록이 이 값에 따라 Tailwind 클래스를 분기**한다(IIFE로 클래스 문자열 계산하는 패턴 다수). UI를 수정할 때 4가지 프리셋을 모두 고려할 것.
