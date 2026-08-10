@@ -174,11 +174,13 @@ function RecordRoundDialog({
           isHydratedRef.current = true;
           return;
         }
-        // 다른 골프장의 작성 중인 기록이 있는 경우: 덮어쓰기 전에 한 번 확인
+        // 라운드 병행 기록은 지원하지 않는다(작성 중인 라운드는 1건).
+        // 다른 골프장에서 새로 시작하면 기존 임시저장을 덮어쓰므로 한 번 확인한다.
         if (draftHasInput(draft)) {
           const ok = window.confirm(
+            `라운드는 한 번에 하나만 기록할 수 있습니다.\n\n` +
             `작성 중이던 "${draft.courseName}" 기록(${countFilledHoles(draft.holes)}홀 입력됨)이 있습니다.\n` +
-            `여기서 새로 기록을 시작하면 그 내용은 삭제됩니다. 계속할까요?`
+            `여기서 새로 시작하면 그 기록은 삭제됩니다. 계속할까요?`
           );
           if (!ok) {
             onOpenChange(false);
