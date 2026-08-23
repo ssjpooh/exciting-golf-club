@@ -39,6 +39,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScoreStatisticsGraph } from "@/components/ScoreStatisticsGraph";
+import { RoundTypeAverageCard } from "@/components/RoundTypeAverageCard";
 
 type ScoresSearch = {
   viewUid?: string;
@@ -988,7 +989,8 @@ function ScoresPage() {
     }
   }, [courseId, courseName, isLoading, games]);
 
-  const displayGames = useMemo(() => {
+  // 골프장/기간 필터까지만 적용된 기록 (평균 타수 카드는 필드/스크린을 나란히 비교해야 하므로 여기까지만 사용)
+  const periodGames = useMemo(() => {
     let filtered = games;
     if (courseId) {
       filtered = filtered.filter(g => g.courseId === courseId);
@@ -999,12 +1001,14 @@ function ScoresPage() {
     if (endDate) {
       filtered = filtered.filter(g => g.date <= endDate);
     }
-    // 라운딩 타입 필터 (roundType 없는 과거 기록은 '필드'로 간주) - 통계·리스트 공통 적용
-    if (roundTypeFilter !== 'all') {
-      filtered = filtered.filter(g => (g.roundType ?? 'field') === roundTypeFilter);
-    }
     return filtered;
-  }, [games, courseId, startDate, endDate, roundTypeFilter]);
+  }, [games, courseId, startDate, endDate]);
+
+  const displayGames = useMemo(() => {
+    // 라운딩 타입 필터 (roundType 없는 과거 기록은 '필드'로 간주) - 통계·리스트 공통 적용
+    if (roundTypeFilter === 'all') return periodGames;
+    return periodGames.filter(g => (g.roundType ?? 'field') === roundTypeFilter);
+  }, [periodGames, roundTypeFilter]);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -1452,6 +1456,13 @@ function ScoresPage() {
             </Card>
           );
         })()}
+
+        {/* ⛳ 필드/스크린 평균 타수 요약 (타입 필터와 무관하게 항상 둘 다 비교 표시) */}
+        <RoundTypeAverageCard
+          games={periodGames}
+          fontSizePreset={fontSizePreset}
+          roundTypeFilter={roundTypeFilter}
+        />
 
         {/* ⛳ 9홀/18홀 게임별 파, 버디, 보기, 양파 수치 통계 그래프 영역 (제목에 선택 라운딩 타입 반영) */}
         <ScoreStatisticsGraph

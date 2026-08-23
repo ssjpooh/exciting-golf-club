@@ -101,6 +101,7 @@ src/
 │  └─ oauth/callback/      # 카카오·네이버 OAuth 콜백
 ├─ components/
 │  ├─ ScoreStatisticsGraph.tsx  # 통계 라인차트 (scores.tsx가 사용)
+│  ├─ RoundTypeAverageCard.tsx  # 필드/스크린 평균 타수 요약 카드 (scores.tsx가 사용)
 │  ├─ MapSearchDialog.tsx       # 구글맵 골프장 검색
 │  ├─ ReleaseNoteDialog.tsx     # 버전 릴리스 노트 팝업
 │  └─ ui/                       # shadcn/ui 컴포넌트 모음
@@ -191,8 +192,18 @@ src/
 - **양파(더블파)** = `(그로스 - par) === par` 인 홀. birdies/pars/bogeys는 `stats`에서, 양파는 실시간 계산.
 - 제목은 선택된 라운딩 타입에 따라 **"전체/필드/스크린 스코어 통계"** 로 동적 표시(제목은 `roundTypeFilter` prop만 받고, 필터 버튼은 그래프 밖 "조회 옵션 바"에 있음. `onRoundTypeChange`가 넘어오면 그래프 헤더에도 버튼이 렌더되는 조건부 구조).
 
+### 8-4-1. 라운딩 타입별 평균 타수 (`RoundTypeAverageCard.tsx`)
+- 조회 옵션 바 아래, 통계 그래프 **위**에 위치. **필드 / 스크린 / 전체**를 한 화면에서 나란히 비교한다.
+- ★입력은 `displayGames`가 아니라 `periodGames`(골프장·기간 필터까지만 적용)★ — 라운딩 타입 필터를 적용해버리면 반대쪽 타입 평균이 0이 되어 비교가 불가능하다.
+- **9홀/18홀은 타수 규모가 달라 따로 평균낸다**(`holes.length`로 분류). 기록이 있는 홀 수 구간만 렌더.
+- 각 타일: 평균 타수(소수 1자리, **그로스 기준**) + `N라운드 · 평균 +오버파`. 평균 오버파는 홀별 par 합계 기준(없으면 72/36 폴백).
+- 카드 상단에 **친 횟수 요약줄** — `라운드 타입 총 N회 : 필드 N회 / 스크린 N회`. 이건 홀 수와 무관한 **전체 집계**라 9홀+18홀을 합친 값이다(홀 수별 횟수는 각 구간 라벨 `OO홀 라운드 · 총 N회`와 타일의 `N라운드`에 있음).
+- 조회 옵션 바에서 선택된 `roundTypeFilter`에 해당하는 타일에 링(ring) 강조.
+- 레거시 기록은 여기서도 `g.roundType ?? 'field'`로 필드 취급.
+
 ### 8-5. `scores.tsx` 페이지 필터/상태
-- `displayGames` = `games`를 **courseId + 시작/종료일 + 라운딩 타입**으로 필터한 결과. 통계·리스트 **공통** 사용.
+- `periodGames` = `games`를 **courseId + 시작/종료일**로만 필터한 결과 → 평균 타수 카드가 사용.
+- `displayGames` = `periodGames`에 **라운딩 타입 필터**까지 적용한 결과. 통계 그래프·리스트 **공통** 사용.
 - **라운딩 타입 필터(전체/필드/스크린)**: 세그먼트 버튼. "조회 옵션 바"(시작/종료일 필터 카드 아래, 입력 창 글자 크기 옆)에 위치. `roundTypeFilter` 상태(`'all' | RoundTypeCode`).
 - **홈으로(전체기록)**: `courseId`가 없으면 `courseInfo`를 `null`로 비워 첫 로그인과 동일한 "내 라운드 기록" 화면으로 복귀.
 - 각 기록 카드의 "그로스(기본):" 배지 앞에 `[필드]`(초록)/`[스크린]`(남보라) 구분 라벨.
