@@ -186,6 +186,18 @@ src/
 - **기록 입력/수정 다이얼로그**의 "라운딩 종류"에는 **필드/스크린 2개만** 노출(전체 없음). 기본값 `field`.
 - `roundType`이 없는 **레거시 기록은 '필드'로 간주**한다 (`g.roundType ?? 'field'`).
 
+### 8-3-1. 라운드 홀 수 선택 (9홀 / 18홀)
+- 기록 다이얼로그의 **"홀 수 (입력할 홀)"** 세그먼트 버튼(`HOLE_COUNT_OPTIONS = [9, 18]`). 위치는 스코어카드 화면의 골프장 이름/코스조합 **바로 다음 줄**(라운딩 종류와 나란히).
+- **등록된 골프장의 홀 수와 무관하게 라운드마다 고른다** — 18홀 코스에서 하프(9홀)만 치거나 스크린 9홀을 치는 경우가 흔하기 때문. 선택한 수만큼 입력 행이 렌더되고, 그 수만큼만 `Score.holes`에 저장된다.
+- 버튼 활성 표시는 `tempHoleCount`가 아니라 **`holes.length`** 기준(실제 렌더되는 홀 수가 진실).
+- `handleHoleCountChange(count)` 동작:
+  - **줄일 때**: 뒤쪽 홀만 잘라내고 **앞 홀 입력값은 보존**. 지워질 홀에 입력이 있으면 `window.confirm`으로 확인.
+  - **늘릴 때**: 부족한 홀만 추가. 등록된 코스 정보(`courseInfo.holes`)가 있으면 그 홀의 par/거리/핸디캡을, 없으면 Par 4 기본값.
+  - (예전에는 홀 수를 바꾸면 무조건 전체를 새로 만들어 입력값이 날아갔다.)
+- 신규 골프장의 `choose_holes` 단계 큰 버튼(9홀/18홀 코스)도 같은 함수를 쓴다. 신규 골프장은 이 값이 `golf_courses.holeCount`로도 저장된다.
+- 다이얼로그를 열 때 `tempHoleCount`는 기존 기록 수정이면 `initialData.holes.length`, 등록된 코스면 `courseInfo.holes.length`로 동기화된다.
+- 통계(`ScoreStatisticsGraph`)·평균 카드(`RoundTypeAverageCard`)는 `holes.length`로 9홀/18홀을 분류하므로 **별도 처리 없이 그대로 반영**된다.
+
 ### 8-4. 통계 그래프 (`ScoreStatisticsGraph.tsx`)
 - 9홀/18홀은 `holes.length`(9 또는 18)로 분류. 헤더의 셀렉트로 전환.
 - 라인: 오버파(+/-), 버디, 파, 보기, 양파. 토글 칩으로 표시/숨김.

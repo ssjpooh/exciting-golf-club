@@ -58,6 +58,13 @@ export const Route = createFileRoute("/scores")({
   component: ScoresPage,
 });
 
+/**
+ * 한 라운드에서 입력할 홀 수.
+ * 18홀 코스라도 하프 라운드(9홀)나 스크린 9홀을 치는 경우가 많아서,
+ * 골프장에 등록된 홀 수와 무관하게 라운드마다 고를 수 있다.
+ */
+const HOLE_COUNT_OPTIONS = [9, 18] as const;
+
 function RecordRoundDialog({
   open,
   onOpenChange,
@@ -146,6 +153,7 @@ function RecordRoundDialog({
           const relativeScore = grossScore > 0 && parVal > 0 ? (grossScore - parVal) : "";
           return { ...h, score: relativeScore, strategy: h.strategy || "" };
         }) || []);
+        setTempHoleCount(initialData.holes.length || 18);
         setSetupStep('scorecard');
         isHydratedRef.current = true;
         return;
@@ -204,6 +212,7 @@ function RecordRoundDialog({
 
       if (hasHoles) {
         setHoles(courseInfo.holes.map((h: any) => ({ ...h, par: h.par || 4, score: "", strategy: "" })));
+        setTempHoleCount(courseInfo.holes.length);
         setSetupStep('scorecard');
       } else {
         setSetupStep('choose_holes'); // New course: ask how many holes first
@@ -267,15 +276,49 @@ function RecordRoundDialog({
 
   const showHcpColumn = handicapType === 'hole' || handicapType === 'both';
 
+  /**
+   * 홀 수(9/18) 변경.
+   * - 줄일 때: 뒤쪽 홀만 잘라내고 앞 홀에 입력한 타수는 그대로 둔다.
+   *   (지워질 홀에 입력값이 있으면 먼저 확인한다)
+   * - 늘릴 때: 등록된 골프장 정보가 있으면 그 홀의 파/거리/핸디캡을 쓰고, 없으면 Par 4 기본값.
+   */
   const handleHoleCountChange = (count: number) => {
+    if (count === holes.length) {
+      setTempHoleCount(count);
+      return;
+    }
+
+    if (count < holes.length) {
+      const droppedFilled = countFilledHoles(holes.slice(count));
+      if (droppedFilled > 0) {
+        const ok = window.confirm(
+          `${count}홀로 바꾸면 ${count + 1}홀부터 입력한 ${droppedFilled}개 홀의 기록이 지워집니다.\n계속할까요?`
+        );
+        if (!ok) return;
+      }
+      setTempHoleCount(count);
+      setHoles(prev => prev.slice(0, count));
+      return;
+    }
+
+    // 늘릴 때는 등록된 코스 정보를 우선 사용 (없으면 Par 4 기본값)
+    const template: any[] = courseInfo?.holes || [];
     setTempHoleCount(count);
-    setHoles(Array.from({ length: count }, (_, i) => ({
-      hole: i + 1,
-      par: 4,
-      score: "",
-      strategy: "",
-      handicap: 0
-    })));
+    setHoles(prev => {
+      const next = [...prev];
+      for (let i = prev.length; i < count; i++) {
+        const t = template[i];
+        next.push({
+          hole: i + 1,
+          par: t?.par || 4,
+          distance: t?.distance ?? 300,
+          score: "",
+          strategy: "",
+          handicap: t?.handicap ?? 0,
+        });
+      }
+      return next;
+    });
   };
 
   const updateHole = (idx: number, field: keyof HoleScore, value: number | string) => {
@@ -680,7 +723,28 @@ function RecordRoundDialog({
                       disabled={!isNewCourse}
                     />
                   </div>
-                  <div className="sm:col-span-2">
+                  {/* 홀 수: 18홀 코스라도 하프(9홀)만 칠 수 있으므로 라운드마다 선택 */}
+                  <div>
+                    <Label className="text-xs font-bold text-slate-500">홀 수 (입력할 홀)</Label>
+                    <div className="flex gap-2 mt-1">
+                      {HOLE_COUNT_OPTIONS.map(count => (
+                        <Button
+                          key={count}
+                          type="button"
+                          variant={holes.length === count ? "default" : "outline"}
+                          onClick={() => handleHoleCountChange(count)}
+                          className={`flex-1 h-9 text-sm font-bold transition-all ${
+                            holes.length === count
+                              ? "bg-teal-600 hover:bg-teal-700 text-white shadow-sm"
+                              : "bg-white hover:bg-slate-50 border-slate-200"
+                          }`}
+                        >
+                          {count}홀
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
                     <Label className="text-xs font-bold text-slate-500">라운딩 종류</Label>
                     <div className="flex gap-2 mt-1">
                       {ROUND_TYPES.map(rt => (
